@@ -52,8 +52,9 @@ in every checked-in aggregate and in the zero-credit replay.
   repetitions each. It is not evidence of general model-quality improvement.
 - All 18 candidate runs passed, so the data demonstrates an efficiency
   difference in this sample but cannot establish a correctness advantage.
-- The tasks, bridge implementation, and context provider come from the same
-  project. Independent replication on unrelated repositories is still needed.
+- v0.7.0 provides a hash-locked pack for an unrelated public repository, but it
+  intentionally contains no paid live result. Independent execution and review
+  of fresh evidence are still needed before claiming external replication.
 - Runtime and token use can vary with service load, model changes, cache state,
   and Codex CLI behavior even when task order alternates.
 - The replay is historical and deliberately receives zero benchmark credit. It

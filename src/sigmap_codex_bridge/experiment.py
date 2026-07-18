@@ -11,7 +11,7 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Sequence
+from typing import Callable, Mapping, Sequence
 
 from . import __version__
 from .benchmark import BenchmarkTask
@@ -142,9 +142,10 @@ class BenchmarkRunArtifact:
     score: BenchmarkScore
     worktree_cleaned: bool
     failure_details: tuple[str, ...]
+    benchmark_pack: Mapping[str, object] | None = None
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        value: dict[str, object] = {
             "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
             "experiment_id": self.experiment_id,
             "task_id": self.task_id,
@@ -172,6 +173,9 @@ class BenchmarkRunArtifact:
             "score": self.score.to_dict(),
             "failure_details": list(self.failure_details),
         }
+        if self.benchmark_pack is not None:
+            value["benchmark_pack"] = dict(self.benchmark_pack)
+        return value
 
 
 CodexRunnerFactory = Callable[[float], CodexRunner]
@@ -227,6 +231,7 @@ class PairedBenchmarkRunner:
         context_timeout_seconds: float = 120.0,
         worktree_root: str | Path | None = None,
         exact_command: Sequence[str] = (),
+        benchmark_pack: Mapping[str, object] | None = None,
     ) -> tuple[BenchmarkRunArtifact, ...]:
         if context_timeout_seconds <= 0:
             raise BenchmarkRunError("context timeout must be greater than zero")
@@ -265,6 +270,7 @@ class PairedBenchmarkRunner:
                     worktree_root=worktree_root,
                     exact_command=tuple(exact_command),
                     environment=environment,
+                    benchmark_pack=benchmark_pack,
                 )
                 filename = f"{pair_id}-{position}-{condition}.json"
                 _atomic_json(destination / filename, artifact.to_dict())
@@ -298,6 +304,7 @@ class PairedBenchmarkRunner:
         worktree_root: str | Path | None,
         exact_command: tuple[str, ...],
         environment: RunEnvironment,
+        benchmark_pack: Mapping[str, object] | None,
     ) -> BenchmarkRunArtifact:
         started_at = _utc_now()
         manager = WorktreeManager(task.repository, root=worktree_root)
@@ -436,6 +443,7 @@ class PairedBenchmarkRunner:
             score=score,
             worktree_cleaned=cleaned,
             failure_details=tuple(failures),
+            benchmark_pack=benchmark_pack,
         )
 
 

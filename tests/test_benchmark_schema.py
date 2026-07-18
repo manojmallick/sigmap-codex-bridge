@@ -16,6 +16,7 @@ class BenchmarkSchemaTests(unittest.TestCase):
         schema_root = Path(__file__).resolve().parents[1] / "schemas"
         names = (
             "benchmark-task-v1.schema.json",
+            "benchmark-pack-v1.schema.json",
             "benchmark-run-artifact-v1.schema.json",
             "benchmark-report-v1.schema.json",
         )

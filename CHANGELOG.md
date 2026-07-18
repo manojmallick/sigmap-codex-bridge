@@ -3,6 +3,26 @@
 All notable changes to SigMap Codex Bridge are documented here. Versions before
 v0.6.0 correspond to the staged pull requests linked in the repository.
 
+## [0.7.0] — 2026-07-18
+
+### Added
+
+- Strict portable benchmark-pack manifests with immutable repository, license,
+  task hash, environment, runner, and schema contracts.
+- Pack initialization, validation, deterministic export, clean-clone preflight,
+  paired execution, evidence sealing, and evidence verification commands.
+- Pack provenance in new artifacts without breaking standalone v1 artifacts.
+- A no-result replication pack for the public MIT-licensed PyPA sampleproject
+  repository and an independent replicator guide.
+
+### Changed
+
+- Package version advanced to 0.7.0.
+- Submission validation accepts the intact historical v0.6.0 candidate from a
+  newer package while still rejecting malformed or future metadata versions.
+- Limitations now distinguish the available independent pack from fresh
+  third-party result evidence, which has not yet been produced.
+
 ## [0.6.0] — 2026-07-18
 
 ### Added

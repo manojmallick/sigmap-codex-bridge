@@ -47,6 +47,17 @@
     "finished_at": { "type": "string", "minLength": 1 },
     "exact_command": { "type": "array", "items": { "type": "string" } },
     "environment": { "type": "object" },
+    "benchmark_pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_schema_version", "pack_id", "evidence_kind", "manifest_sha256"],
+      "properties": {
+        "pack_schema_version": { "const": 1 },
+        "pack_id": { "type": "string", "minLength": 3 },
+        "evidence_kind": { "enum": ["original", "replication"] },
+        "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
     "bridge": { "type": "object" },
     "score": {
       "type": "object",

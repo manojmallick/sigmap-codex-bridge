@@ -6,11 +6,10 @@ OpenAI Build Week 2026.
 
 ## Current status
 
-This repository is preparing **v0.6.0**, the Build Week submission candidate.
-The code, measured report, README, demo script, and submission copy use one
-frozen result and one claim. Repository-owned gates are complete only when CI
-passes; the final submission remains explicitly blocked until real `/feedback`,
-video, and Devpost values replace the null fields in submission metadata.
+The **v0.7.0** development line adds an independent replication kit while
+preserving the frozen v0.6.0 Build Week candidate. The final submission remains
+explicitly blocked until real `/feedback`, video, and Devpost values replace
+the null fields in submission metadata; no v0.7 work changes that evidence.
 
 The hypothesis is:
 
@@ -52,6 +51,8 @@ that changed the implementation.
   — initial Codex integration decision
 - [`docs/benchmark-specification.md`](docs/benchmark-specification.md) — task
   contract, metric definitions, and threats to validity
+- [`docs/independent-replication.md`](docs/independent-replication.md) — portable
+  pack lifecycle, independent run procedure, integrity checks, and non-claims
 - [`docs/judge-quickstart.md`](docs/judge-quickstart.md) — five-minute install,
   zero-credit replay, and separate opt-in live path
 - [`docs/challenges-and-limitations.md`](docs/challenges-and-limitations.md) —
@@ -191,6 +192,24 @@ static checks, repository changes, independent score, cleanup result, and all
 failure details. Reports include condition success rates, median efficiency
 metrics, and every failed run. Ratios are `null` when the raw denominator is
 zero.
+
+Validate, export, and preflight the pinned public-repository replication pack
+without launching Codex or consuming model credits:
+
+```bash
+sigmap-bridge benchmark pack validate \
+  benchmark_packs/pypa-sampleproject-v1/pack.yaml --json
+sigmap-bridge benchmark pack export \
+  benchmark_packs/pypa-sampleproject-v1/pack.yaml \
+  /tmp/pypa-sampleproject-v1.tar.gz --json
+sigmap-bridge benchmark pack preflight \
+  benchmark_packs/pypa-sampleproject-v1/pack.yaml --json
+```
+
+The [independent replication guide](docs/independent-replication.md) separates
+those zero-credit integrity checks from the opt-in live pair, which requires
+external services and may consume credits. The reference pack contains no
+claimed replication result.
 
 Audit records contain the full SHA-256 digest of context, not raw context or
 task text. The local chain and checkpoint detect ordinary modification,
