@@ -3,6 +3,26 @@
 All notable changes to SigMap Codex Bridge are documented here. Versions before
 v0.6.0 correspond to the staged pull requests linked in the repository.
 
+## [0.8.0] — 2026-07-18
+
+### Added
+
+- Deterministic within-pair correctness transitions, runtime/input/output
+  deltas, direction counts, median/MAD effects, and honest uncertainty status.
+- Compatibility-stratified experiment comparison with explicit, recorded
+  overrides for task, model, Codex command, platform, or pack mismatches.
+- Strict regression-policy and result contracts covering correctness,
+  efficiency, unexpected files, and cleanup with dedicated exit code `50`.
+- Interpretation guidance and an executable conservative policy example.
+
+### Changed
+
+- Package version advanced to 0.8.0 while historical v1 artifacts and the
+  frozen v0.6.0 submission evidence remain valid.
+- Report schema v1 accepts the additive `paired_analysis` field; samples below
+  10 comparable pairs state `insufficient_evidence` instead of emitting an
+  interval.
+
 ## [0.7.0] — 2026-07-18
 
 ### Added

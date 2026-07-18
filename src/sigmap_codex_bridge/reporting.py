@@ -9,6 +9,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterable, Mapping
 
+from .paired import PairingError, analyze_pairs
+
 
 REPORT_SCHEMA_VERSION = 1
 METRICS = (
@@ -137,6 +139,10 @@ def generate_report(artifacts: Iterable[dict[str, object]]) -> dict[str, object]
             sigmap_medians["input_tokens"], raw_medians["input_tokens"]
         ),
     }
+    try:
+        paired_analysis = analyze_pairs(rows)
+    except PairingError as error:
+        raise ReportError(str(error)) from error
     return {
         "report_schema_version": REPORT_SCHEMA_VERSION,
         "artifact_count": len(rows),
@@ -145,6 +151,7 @@ def generate_report(artifacts: Iterable[dict[str, object]]) -> dict[str, object]
         "environments": [json.loads(value) for value in environments],
         "overall": overall_summary,
         "comparisons": comparisons,
+        "paired_analysis": paired_analysis,
         "tasks": tasks,
         "failures": failures,
     }
@@ -176,6 +183,46 @@ def render_markdown(report: Mapping[str, object]) -> str:
             f"{_format_number(medians['input_tokens'])} | "
             f"{_format_number(medians['patch_lines'])} |"
         )
+
+    paired = report.get("paired_analysis")
+    if isinstance(paired, Mapping):
+        lines.extend(("", "## Paired analysis", ""))
+        lines.append(
+            f"Complete pairs: {paired['complete_pair_count']} / {paired['pair_count']}. "
+            f"Confidence intervals require {paired['minimum_confidence_pairs']} "
+            "comparable pairs."
+        )
+        lines.extend(
+            (
+                "",
+                "| Metric | Comparable pairs | Improved / unchanged / regressed | Median delta | 95% interval |",
+                "|---|---:|---:|---:|---:|",
+            )
+        )
+        metrics = paired["metrics"]
+        assert isinstance(metrics, Mapping)
+        for metric in ("runtime_seconds", "input_tokens", "output_tokens"):
+            analysis = metrics[metric]
+            assert isinstance(analysis, Mapping)
+            directions = analysis["direction_counts"]
+            effect = analysis["effect"]
+            interval = analysis["confidence_interval"]
+            assert isinstance(directions, Mapping)
+            assert isinstance(effect, Mapping)
+            assert isinstance(interval, Mapping)
+            if interval["status"] == "available":
+                interval_text = (
+                    f"{_format_number(interval['lower'])} to "
+                    f"{_format_number(interval['upper'])}"
+                )
+            else:
+                interval_text = "insufficient evidence"
+            lines.append(
+                f"| {metric} | {analysis['comparable_pairs']} | "
+                f"{directions['improved']} / {directions['unchanged']} / "
+                f"{directions['regressed']} | "
+                f"{_format_number(effect['median_delta'])} | {interval_text} |"
+            )
 
     lines.extend(("", "## Per task", ""))
     tasks = report["tasks"]
