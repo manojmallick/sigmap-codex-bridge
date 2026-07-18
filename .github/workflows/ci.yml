@@ -32,6 +32,10 @@ jobs:
         run: ruff check .
       - name: Validate internally consistent submission candidate
         run: sigmap-bridge submission validate submission/build-week-2026.json --json
+      - name: Validate independent replication pack
+        run: >-
+          sigmap-bridge benchmark pack validate
+          benchmark_packs/pypa-sampleproject-v1/pack.yaml --json
       - name: Build distributions
         run: python -m build
       - name: Verify installed-wheel replay outside checkout

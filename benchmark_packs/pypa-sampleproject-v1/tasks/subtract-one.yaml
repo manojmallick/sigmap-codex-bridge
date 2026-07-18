@@ -1,0 +1,36 @@
+schema_version: 1
+repository: $PACK_REPOSITORY
+revision: 621e4974ca25ce531773def586ba3ed8e736b3fc
+prompt: >-
+  Add a subtract_one(number) function to src/sample/simple.py that returns
+  number minus one. Add TestSimple.test_subtract_one to tests/test_simple.py
+  with representative positive and negative cases. Preserve add_one behavior
+  and the repository's existing style.
+expected_behavior: >-
+  subtract_one is importable, returns one less than its argument, the existing
+  add_one test still passes, and the new unittest covers the behavior.
+test_command:
+  - python3
+  - -c
+  - >-
+    import sys, unittest; sys.path.insert(0, 'src');
+    result = unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('tests'));
+    raise SystemExit(0 if result.wasSuccessful() else 1)
+static_check_commands:
+  - - python3
+    - -c
+    - >-
+      import sys; sys.path.insert(0, 'src');
+      from sample.simple import subtract_one;
+      assert subtract_one(5) == 4 and subtract_one(-2) == -3
+allowed_files:
+  - src/sample/simple.py
+  - tests/test_simple.py
+expected_files:
+  - src/sample/simple.py
+  - tests/test_simple.py
+expected_symbols:
+  - subtract_one
+  - test_subtract_one
+timeout_seconds: 300
+repetitions: 1

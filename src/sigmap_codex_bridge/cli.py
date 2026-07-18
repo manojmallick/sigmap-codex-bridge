@@ -19,6 +19,16 @@ from .experiment import (
     default_exact_command,
 )
 from .git import GitError
+from .pack import (
+    PackValidationError,
+    export_pack,
+    initialize_pack,
+    load_benchmark_pack,
+    preflight_pack,
+    run_pack,
+    seal_evidence,
+    verify_evidence,
+)
 from .preflight import preflight_task
 from .reporting import ReportError, write_report
 from .submission import render_submission, validate_submission
@@ -148,6 +158,71 @@ def build_parser() -> argparse.ArgumentParser:
     )
     benchmark_run_parser.add_argument("--worktree-root")
     benchmark_run_parser.add_argument("--json", action="store_true")
+    pack_parser = benchmark_subparsers.add_parser(
+        "pack", help="Create and run portable independent replication packs"
+    )
+    pack_subparsers = pack_parser.add_subparsers(dest="pack_command", required=True)
+    pack_init = pack_subparsers.add_parser("init", help="Create a strict pack manifest")
+    pack_init.add_argument("output")
+    pack_init.add_argument("--pack-id", required=True)
+    pack_init.add_argument(
+        "--evidence-kind", choices=("original", "replication"), default="replication"
+    )
+    pack_init.add_argument("--repository-url", required=True)
+    pack_init.add_argument("--revision", required=True)
+    pack_init.add_argument("--license", dest="license_id", required=True)
+    pack_init.add_argument("--task", action="append", required=True)
+    pack_init.add_argument("--python", default=">=3.10,<3.15")
+    pack_init.add_argument(
+        "--platform", action="append", choices=("darwin", "linux"), required=True
+    )
+    pack_init.add_argument("--setup-command", nargs="+")
+    pack_init.add_argument("--repetitions", type=int, default=1)
+    pack_init.add_argument(
+        "--sandbox",
+        choices=("read-only", "workspace-write", "danger-full-access"),
+        default="workspace-write",
+    )
+    pack_init.add_argument("--json", action="store_true")
+
+    pack_validate = pack_subparsers.add_parser("validate", help="Validate a pack")
+    pack_validate.add_argument("pack_file")
+    pack_validate.add_argument("--json", action="store_true")
+    pack_export = pack_subparsers.add_parser(
+        "export", help="Write a byte-stable portable pack archive"
+    )
+    pack_export.add_argument("pack_file")
+    pack_export.add_argument("output")
+    pack_export.add_argument("--json", action="store_true")
+    pack_preflight = pack_subparsers.add_parser(
+        "preflight", help="Clone the pinned repository and check every baseline"
+    )
+    pack_preflight.add_argument("pack_file")
+    pack_preflight.add_argument("--workspace", default=".benchmark-pack-workspace")
+    pack_preflight.add_argument("--json", action="store_true")
+    pack_run = pack_subparsers.add_parser(
+        "run", help="Execute complete raw/SigMap pairs from a pack"
+    )
+    pack_run.add_argument("pack_file")
+    pack_run.add_argument("--workspace", default=".benchmark-pack-workspace")
+    pack_run.add_argument("--output-dir", required=True)
+    pack_run.add_argument("--experiment-id", required=True)
+    pack_run.add_argument("--model")
+    pack_run.add_argument("--codex-command")
+    pack_run.add_argument("--context-timeout", type=float, default=120.0)
+    pack_run.add_argument("--json", action="store_true")
+    pack_seal = pack_subparsers.add_parser(
+        "seal", help="Hash all retained pack artifacts and reports"
+    )
+    pack_seal.add_argument("pack_file")
+    pack_seal.add_argument("evidence_dir")
+    pack_seal.add_argument("--json", action="store_true")
+    pack_verify = pack_subparsers.add_parser(
+        "verify-evidence", help="Verify hashes, provenance, and complete pairs"
+    )
+    pack_verify.add_argument("pack_file")
+    pack_verify.add_argument("evidence_dir")
+    pack_verify.add_argument("--json", action="store_true")
     report_parser = benchmark_subparsers.add_parser(
         "report", help="Regenerate JSON and Markdown reports from raw artifacts"
     )
@@ -249,6 +324,91 @@ def main(
         return int(ExitCode.SUCCESS)
 
     if args.command == "benchmark":
+        if args.benchmark_command == "pack":
+            try:
+                if args.pack_command == "init":
+                    pack = initialize_pack(
+                        args.output,
+                        pack_id=args.pack_id,
+                        evidence_kind=args.evidence_kind,
+                        repository_url=args.repository_url,
+                        revision=args.revision,
+                        license_id=args.license_id,
+                        task_paths=args.task,
+                        python=args.python,
+                        platforms=args.platform,
+                        setup_command=args.setup_command,
+                        repetitions=args.repetitions,
+                        sandbox=args.sandbox,
+                    )
+                    payload = {
+                        "valid": True,
+                        "pack_id": pack.pack_id,
+                        "manifest": pack.manifest_path,
+                        "manifest_sha256": pack.manifest_sha256,
+                    }
+                else:
+                    pack = load_benchmark_pack(args.pack_file)
+                    if args.pack_command == "validate":
+                        payload = {
+                            "valid": True,
+                            "pack_id": pack.pack_id,
+                            "evidence_kind": pack.evidence_kind,
+                            "manifest_sha256": pack.manifest_sha256,
+                            "task_count": len(pack.tasks),
+                        }
+                    elif args.pack_command == "export":
+                        payload = export_pack(pack, args.output)
+                    elif args.pack_command == "preflight":
+                        results = preflight_pack(pack, args.workspace)
+                        payload = {
+                            "valid": all(result.valid for result in results),
+                            "pack_id": pack.pack_id,
+                            "tasks": [result.to_dict() for result in results],
+                        }
+                    elif args.pack_command == "run":
+                        runner = benchmark_runner_factory()
+                        command_argv = tuple(argv) if argv is not None else tuple(sys.argv[1:])
+                        artifacts = run_pack(
+                            pack,
+                            workspace=args.workspace,
+                            output_dir=args.output_dir,
+                            experiment_id=args.experiment_id,
+                            runner=runner,
+                            model=args.model,
+                            codex_command=(args.codex_command,)
+                            if args.codex_command
+                            else None,
+                            context_timeout_seconds=args.context_timeout,
+                            exact_command=default_exact_command(command_argv),
+                        )
+                        payload = {
+                            "valid": True,
+                            "pack_id": pack.pack_id,
+                            "experiment_id": args.experiment_id,
+                            "artifact_count": len(artifacts),
+                            "output_dir": str(Path(args.output_dir).resolve()),
+                        }
+                    elif args.pack_command == "seal":
+                        index = seal_evidence(pack, args.evidence_dir)
+                        payload = {
+                            "valid": True,
+                            "pack_id": pack.pack_id,
+                            "file_count": len(index["files"]),
+                        }
+                    else:
+                        payload = verify_evidence(pack, args.evidence_dir)
+                exit_code = (
+                    int(ExitCode.SUCCESS)
+                    if payload.get("valid")
+                    else int(ExitCode.INVALID_INPUT)
+                )
+            except (PackValidationError, BenchmarkRunError) as error:
+                payload = {"valid": False, "error": str(error)}
+                exit_code = int(ExitCode.INVALID_INPUT)
+            _print_payload(payload, as_json=args.json)
+            return exit_code
+
         if args.benchmark_command == "report":
             artifact_dir = Path(args.artifact_dir).resolve()
             json_path = Path(args.json_output or artifact_dir / "report.json").resolve()

@@ -55,6 +55,19 @@ class SubmissionCandidateTests(unittest.TestCase):
         self.assertTrue(result.valid)
         self.assertTrue(result.submission_ready)
 
+    def test_future_or_malformed_candidate_version_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self.fixture(root)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            for version in ("0.8.0", "next"):
+                payload["release"]["version"] = version
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.subTest(version=version):
+                    result = validate_submission(path)
+                    self.assertFalse(result.valid)
+                    self.assertEqual(check(result, "package_version").status, "fail")
+
     def test_tampered_numbers_and_escaped_report_path_fail_integrity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

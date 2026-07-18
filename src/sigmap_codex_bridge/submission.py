@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -61,6 +62,15 @@ def _https_url(value: object) -> bool:
     return parsed.scheme == "https" and bool(parsed.netloc)
 
 
+def _release_version(value: object) -> tuple[int, int, int] | None:
+    if not isinstance(value, str):
+        return None
+    match = re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", value)
+    if match is None:
+        return None
+    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+
+
 def validate_submission(path: str | Path) -> SubmissionResult:
     """Validate evidence consistency and report separate external blockers."""
 
@@ -90,13 +100,23 @@ def validate_submission(path: str | Path) -> SubmissionResult:
         )
     )
     version = _nested(payload, "release", "version")
-    version_ok = version == __version__
+    metadata_version = _release_version(version)
+    package_version = _release_version(__version__)
+    version_ok = (
+        metadata_version is not None
+        and package_version is not None
+        and metadata_version <= package_version
+    )
     checks.append(
         SubmissionCheck(
             "package_version",
             "ok" if version_ok else "fail",
             f"metadata {version!r}; package {__version__!r}",
-            None if version_ok else "Keep metadata and package versions identical.",
+            (
+                None
+                if version_ok
+                else "Use a semantic release version no newer than the installed package."
+            ),
         )
     )
 
