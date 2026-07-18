@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 
 
 mode = os.environ.get("FAKE_CODEX_MODE", "success")
@@ -21,6 +22,19 @@ elif mode == "failed":
     print(json.dumps({"type": "turn.failed", "message": "synthetic failure"}))
     raise SystemExit(7)
 else:
+    if mode == "write":
+        leaked = Path("source-only.txt").exists()
+        Path("codex-created.txt").write_text("created by fixture\n", encoding="utf-8")
+    else:
+        leaked = False
+    changed_paths = (
+        [{"path": "codex-created.txt", "kind": "create"}]
+        if mode == "write"
+        else [
+            {"path": "src/auth.py", "kind": "update"},
+            {"path": "tests/test_auth.py", "kind": "create"},
+        ]
+    )
     events = [
         {"type": "thread.started", "thread_id": "thread-fixture"},
         {"type": "turn.started"},
@@ -29,10 +43,7 @@ else:
             "item": {
                 "id": "change-1",
                 "type": "file_change",
-                "changes": [
-                    {"path": "src/auth.py", "kind": "update"},
-                    {"path": "tests/test_auth.py", "kind": "create"},
-                ],
+                "changes": changed_paths,
             },
         },
         {
@@ -40,7 +51,11 @@ else:
             "item": {
                 "id": "message-1",
                 "type": "agent_message",
-                "text": f"fixture completed; context={bool(stdin_text)}",
+                "text": (
+                    f"fixture completed; context={bool(stdin_text)}; leaked={leaked}"
+                    if mode == "write"
+                    else f"fixture completed; context={bool(stdin_text)}"
+                ),
             },
         },
         {
