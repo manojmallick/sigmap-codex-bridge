@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# SigMap generated context
+.context/
+.sigmap_context.md
+
+# Bridge runtime and audit artifacts
+.sigmap_bridge_audit.jsonl
+.bridge-worktrees/
+benchmark_runs/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
