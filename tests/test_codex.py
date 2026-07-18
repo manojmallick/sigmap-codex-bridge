@@ -30,6 +30,8 @@ class CodexRunnerTests(unittest.TestCase):
         self.assertEqual(result.file_changes, ("src/auth.py", "tests/test_auth.py"))
         self.assertEqual(result.usage.input_tokens, 120)
         self.assertEqual(result.usage.cached_input_tokens, 20)
+        self.assertEqual(result.command_event_count, 1)
+        self.assertEqual(result.tool_event_count, 1)
         self.assertEqual(result.final_message, "fixture completed; context=True")
         self.assertEqual(
             result.process.command[-5:],
