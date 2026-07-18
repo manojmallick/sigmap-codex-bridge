@@ -16,8 +16,24 @@ The hypothesis is:
 > Relevant repository context should improve task success or reduce the work
 > Codex needs to reach a correct result.
 
-No performance improvement is claimed until a reproducible benchmark with
-independent correctness checks has been implemented and run.
+A fresh paired run on 2026-07-18 retained all 18 attempts: both conditions
+passed 9/9 candidate regression/static checks. Across all runs, median runtime
+was 249.089 seconds raw versus 186.590 seconds with SigMap; median total input
+was 766,538 versus 562,358 tokens. These are small-sample maintenance-task
+results, not a general model-quality claim, and one task used more input with
+SigMap.
+
+| Task | Raw success | SigMap success | Median runtime raw / SigMap (s) | Median input raw / SigMap |
+|---|---:|---:|---:|---:|
+| Artifact run status | 3/3 | 3/3 | 228.288 / 216.274 | 534,456 / 606,285 |
+| Markdown comparisons | 3/3 | 3/3 | 249.089 / 141.404 | 766,538 / 402,740 |
+| Report failure exit | 3/3 | 3/3 | 266.106 / 183.294 | 937,367 / 509,165 |
+| **Overall per-run median** | **9/9** | **9/9** | **249.089 / 186.590** | **766,538 / 562,358** |
+
+The checked-in [report](benchmarks/results/build-week-2026-07-18/report.md),
+[machine-readable aggregate](benchmarks/results/build-week-2026-07-18/report.json),
+and [methodology](benchmarks/results/build-week-2026-07-18/README.md) contain
+the complete environment, command, limitations, and all raw artifacts.
 
 ## Project documents
 
