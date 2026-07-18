@@ -1,0 +1,26 @@
+schema_version: 1
+repository: ../..
+revision: 504e823853459fef0c66e0b02915b4fc59ec3151
+prompt: >-
+  Add an explicit run_status field to BenchmarkRunArtifact serialization. It
+  must be "passed" only when the independent score passes, the worktree was
+  cleaned, and failure_details is empty; otherwise it must be "failed". Update
+  the public run-artifact JSON Schema and focused tests while preserving the
+  existing artifact fields and behavior. Run the relevant tests.
+expected_behavior: >-
+  Serialized run artifacts expose a schema-validated run_status derived only
+  from observable score, cleanup, and failure outcomes.
+test_command: [/usr/bin/env, PYTHONPATH=src:tests, python3, -m, unittest, discover, -s, tests]
+static_check_commands:
+  - [ruff, check, src, tests]
+allowed_files:
+  - src/sigmap_codex_bridge/experiment.py
+  - schemas/benchmark-run-artifact-v1.schema.json
+  - tests/test_experiment.py
+expected_files:
+  - src/sigmap_codex_bridge/experiment.py
+  - schemas/benchmark-run-artifact-v1.schema.json
+  - tests/test_experiment.py
+expected_symbols: [BenchmarkRunArtifact, to_dict]
+timeout_seconds: 600
+repetitions: 3

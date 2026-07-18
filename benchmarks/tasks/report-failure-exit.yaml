@@ -1,0 +1,26 @@
+schema_version: 1
+repository: ../..
+revision: 504e823853459fef0c66e0b02915b4fc59ec3151
+prompt: >-
+  Add a --fail-on-failures option to `sigmap-bridge benchmark report`. The
+  report files must always be written first. With the option, return the stable
+  invalid-input exit code when the generated report contains failed runs;
+  without it, preserve the current successful exit behavior. Add focused CLI
+  tests and update the README command documentation. Run the relevant tests.
+expected_behavior: >-
+  Automation can opt into a nonzero report exit for retained benchmark failures
+  without losing generated evidence or changing default CLI behavior.
+test_command: [/usr/bin/env, PYTHONPATH=src:tests, python3, -m, unittest, discover, -s, tests]
+static_check_commands:
+  - [ruff, check, src, tests]
+allowed_files:
+  - src/sigmap_codex_bridge/cli.py
+  - tests/test_cli_benchmark.py
+  - README.md
+expected_files:
+  - src/sigmap_codex_bridge/cli.py
+  - tests/test_cli_benchmark.py
+  - README.md
+expected_symbols: [build_parser, main]
+timeout_seconds: 600
+repetitions: 3
