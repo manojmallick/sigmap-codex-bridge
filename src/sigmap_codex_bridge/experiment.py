@@ -178,6 +178,15 @@ class BenchmarkRunArtifact:
         return value
 
 
+@dataclass(frozen=True)
+class PreparedBenchmarkTask:
+    task: BenchmarkTask
+    task_path: Path
+    task_id: str
+    resolved_revision: str
+    environment: RunEnvironment
+
+
 CodexRunnerFactory = Callable[[float], CodexRunner]
 
 
@@ -233,33 +242,24 @@ class PairedBenchmarkRunner:
         exact_command: Sequence[str] = (),
         benchmark_pack: Mapping[str, object] | None = None,
     ) -> tuple[BenchmarkRunArtifact, ...]:
-        if context_timeout_seconds <= 0:
-            raise BenchmarkRunError("context timeout must be greater than zero")
-        preflight = preflight_task(task, worktree_root=worktree_root)
-        self._require_preflight(preflight)
-        assert preflight.revision is not None
-
-        artifacts: list[BenchmarkRunArtifact] = []
-        task_path = Path(task_file).resolve()
-        task_id = _safe_label(task_path.stem)
-        destination = Path(output_dir).resolve()
-        environment = self.environment(
-            model=model,
+        prepared = self.prepare_task(
+            task,
+            task_file=task_file,
             sandbox=sandbox,
+            model=model,
             codex_command=codex_command,
+            context_timeout_seconds=context_timeout_seconds,
+            worktree_root=worktree_root,
         )
+        artifacts: list[BenchmarkRunArtifact] = []
         for repetition in range(1, task.repetitions + 1):
             order = condition_order(repetition, start_condition)
-            pair_id = f"{task_id}-r{repetition:03d}"
             for position, condition in enumerate(order, start=1):
-                artifact = self._run_one(
-                    task,
-                    task_id=task_id,
-                    task_file=task_path,
+                artifact = self.run_attempt(
+                    prepared,
+                    output_dir=output_dir,
                     experiment_id=experiment_id,
-                    resolved_revision=preflight.revision,
                     repetition=repetition,
-                    pair_id=pair_id,
                     condition=condition,
                     order=order,
                     position=position,
@@ -267,15 +267,90 @@ class PairedBenchmarkRunner:
                     model=model,
                     codex_command=tuple(codex_command) if codex_command else None,
                     context_timeout_seconds=context_timeout_seconds,
-                    worktree_root=worktree_root,
                     exact_command=tuple(exact_command),
-                    environment=environment,
                     benchmark_pack=benchmark_pack,
+                    worktree_root=worktree_root,
                 )
-                filename = f"{pair_id}-{position}-{condition}.json"
-                _atomic_json(destination / filename, artifact.to_dict())
                 artifacts.append(artifact)
         return tuple(artifacts)
+
+    def prepare_task(
+        self,
+        task: BenchmarkTask,
+        *,
+        task_file: str | Path,
+        sandbox: str,
+        model: str | None,
+        codex_command: Sequence[str] | None,
+        context_timeout_seconds: float,
+        worktree_root: str | Path | None,
+    ) -> PreparedBenchmarkTask:
+        if context_timeout_seconds <= 0:
+            raise BenchmarkRunError("context timeout must be greater than zero")
+        preflight = preflight_task(task, worktree_root=worktree_root)
+        self._require_preflight(preflight)
+        assert preflight.revision is not None
+        task_path = Path(task_file).resolve()
+        return PreparedBenchmarkTask(
+            task=task,
+            task_path=task_path,
+            task_id=_safe_label(task_path.stem),
+            resolved_revision=preflight.revision,
+            environment=self.environment(
+                model=model,
+                sandbox=sandbox,
+                codex_command=codex_command,
+            ),
+        )
+
+    def run_attempt(
+        self,
+        prepared: PreparedBenchmarkTask,
+        *,
+        output_dir: str | Path,
+        experiment_id: str,
+        repetition: int,
+        condition: str,
+        order: tuple[str, str],
+        position: int,
+        sandbox: str,
+        model: str | None,
+        codex_command: tuple[str, ...] | None,
+        context_timeout_seconds: float,
+        exact_command: tuple[str, ...],
+        benchmark_pack: Mapping[str, object] | None,
+        worktree_root: str | Path | None = None,
+        run_id: str | None = None,
+        refuse_existing: bool = False,
+    ) -> BenchmarkRunArtifact:
+        pair_id = f"{prepared.task_id}-r{repetition:03d}"
+        filename = f"{pair_id}-{position}-{condition}.json"
+        destination = Path(output_dir).resolve() / filename
+        if refuse_existing and destination.exists():
+            raise BenchmarkRunError(f"refusing to overwrite artifact: {destination}")
+        artifact = self._run_one(
+            prepared.task,
+            task_id=prepared.task_id,
+            task_file=prepared.task_path,
+            experiment_id=experiment_id,
+            resolved_revision=prepared.resolved_revision,
+            repetition=repetition,
+            pair_id=pair_id,
+            condition=condition,
+            order=order,
+            position=position,
+            sandbox=sandbox,
+            model=model,
+            codex_command=codex_command,
+            context_timeout_seconds=context_timeout_seconds,
+            worktree_root=worktree_root,
+            exact_command=exact_command,
+            environment=prepared.environment,
+            benchmark_pack=benchmark_pack,
+            run_id=run_id,
+        )
+        _atomic_json(destination, artifact.to_dict())
+        return artifact
 
     @staticmethod
     def _require_preflight(preflight: PreflightResult) -> None:
@@ -305,6 +380,7 @@ class PairedBenchmarkRunner:
         exact_command: tuple[str, ...],
         environment: RunEnvironment,
         benchmark_pack: Mapping[str, object] | None,
+        run_id: str | None,
     ) -> BenchmarkRunArtifact:
         started_at = _utc_now()
         manager = WorktreeManager(task.repository, root=worktree_root)
@@ -321,7 +397,9 @@ class PairedBenchmarkRunner:
         failures: list[str] = []
 
         try:
-            lease = manager.create(f"benchmark-{uuid.uuid4().hex}", resolved_revision)
+            lease = manager.create(
+                run_id or f"benchmark-{uuid.uuid4().hex}", resolved_revision
+            )
             worktree = Path(lease.path)
             if task.setup_command is not None:
                 setup = run_process(

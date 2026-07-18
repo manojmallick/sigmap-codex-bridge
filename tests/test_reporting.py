@@ -122,6 +122,34 @@ class ReportingTests(unittest.TestCase):
             report["comparisons"]["sigmap_to_raw_success_rate_ratio"]
         )
 
+    def test_incomplete_pair_is_retained_but_excluded_from_aggregates(self) -> None:
+        rows = (
+            artifact("one", "raw", 1, True),
+            artifact("one", "sigmap", 1, True),
+            artifact("one", "raw", 2, False),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for index, row in enumerate(rows):
+                (root / f"{index}.json").write_text(
+                    json.dumps(row), encoding="utf-8"
+                )
+            report = write_report(
+                root,
+                json_path=root / "report.json",
+                markdown_path=root / "report.md",
+            )
+            markdown = (root / "report.md").read_text(encoding="utf-8")
+
+        self.assertEqual(report["artifact_count"], 3)
+        self.assertEqual(report["overall"]["raw"]["attempts"], 1)
+        self.assertEqual(report["overall"]["sigmap"]["attempts"], 1)
+        self.assertEqual(
+            report["paired_analysis"]["excluded_incomplete_attempt_count"], 1
+        )
+        self.assertEqual(len(report["failures"]), 1)
+        self.assertIn("Excluded incomplete attempts from aggregate summaries: 1", markdown)
+
 
 if __name__ == "__main__":
     unittest.main()

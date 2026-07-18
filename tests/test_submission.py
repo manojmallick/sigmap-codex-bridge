@@ -60,7 +60,7 @@ class SubmissionCandidateTests(unittest.TestCase):
             root = Path(directory)
             path = self.fixture(root)
             payload = json.loads(path.read_text(encoding="utf-8"))
-            for version in ("0.9.0", "next"):
+            for version in ("1.0.0", "next"):
                 payload["release"]["version"] = version
                 path.write_text(json.dumps(payload), encoding="utf-8")
                 with self.subTest(version=version):

@@ -18,6 +18,7 @@ class BenchmarkSchemaTests(unittest.TestCase):
             "benchmark-task-v1.schema.json",
             "benchmark-pack-v1.schema.json",
             "benchmark-comparison-v1.schema.json",
+            "benchmark-execution-state-v1.schema.json",
             "benchmark-gate-policy-v1.schema.json",
             "benchmark-gate-result-v1.schema.json",
             "benchmark-run-artifact-v1.schema.json",

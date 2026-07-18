@@ -83,6 +83,13 @@ sub-10-pair uncertainty explicitly. The
 signs, the confidence-interval boundary, compatibility strata, regression
 policies, and interpretation non-claims.
 
+With v0.9 resumable execution, artifacts from an interrupted partial pair are
+retained and listed (including failures), but only complete raw/SigMap pairs
+contribute to per-condition aggregates and comparisons. The report records the
+number of excluded incomplete attempts. The
+[resumable execution guide](resumable-execution.md) defines checkpoint,
+reconciliation, concurrency, budget, and exact-lease recovery semantics.
+
 ## Threats to validity
 
 - **Stochasticity:** model output varies. Preserve all repetitions and report

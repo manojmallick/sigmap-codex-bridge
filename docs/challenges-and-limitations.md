@@ -57,6 +57,9 @@ in every checked-in aggregate and in the zero-credit replay.
   of fresh evidence are still needed before claiming external replication.
 - Runtime and token use can vary with service load, model changes, cache state,
   and Codex CLI behavior even when task order alternates.
+- Parallel pair execution preserves condition isolation and deterministic
+  report ordering, but concurrent external-service load can still change
+  runtime, token use, and stochastic model output.
 - Paired median/MAD summaries reduce sensitivity to outliers but do not remove
   task-selection or external-service bias. The 10-pair bootstrap boundary is an
   operational disclosure rule, not a claim of statistical power.
@@ -73,3 +76,6 @@ in every checked-in aggregate and in the zero-credit replay.
 - Audit hashes and local checkpoints detect ordinary artifact mutation but are
   not signed or externally anchored attestations against an actor who can
   rewrite every local record.
+- Resumable state uses atomic local-file replacement and exact worktree leases;
+  it is not a distributed lock, durable database, signed record, or protection
+  against a second process deliberately mutating the same execution directory.

@@ -14,6 +14,14 @@ from .bridge import Bridge, BridgeResult, ExitCode
 from .comparison import ComparisonError, compare_directories, write_comparison
 from .demo import DemoError, render_replay, replay_demo
 from .doctor import render_doctor, run_doctor
+from .execution import (
+    ExecutionBudget,
+    ExecutionError,
+    ExecutionTask,
+    ResumableBenchmarkExecutor,
+    diagnose_execution_state,
+    recover_execution_state,
+)
 from .experiment import (
     BenchmarkRunError,
     PairedBenchmarkRunner,
@@ -159,6 +167,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="SigMap retrieval timeout in seconds",
     )
     benchmark_run_parser.add_argument("--worktree-root")
+    benchmark_run_parser.add_argument(
+        "--state-file", help="Enable atomic resumable execution state"
+    )
+    benchmark_run_parser.add_argument("--resume", action="store_true")
+    benchmark_run_parser.add_argument("--max-workers", type=int, default=1)
+    benchmark_run_parser.add_argument("--max-pairs", type=int)
+    benchmark_run_parser.add_argument("--max-runtime-seconds", type=float)
+    benchmark_run_parser.add_argument("--max-total-tokens", type=int)
     benchmark_run_parser.add_argument("--json", action="store_true")
     pack_parser = benchmark_subparsers.add_parser(
         "pack", help="Create and run portable independent replication packs"
@@ -247,6 +263,22 @@ def build_parser() -> argparse.ArgumentParser:
     gate_parser.add_argument("policy_file")
     gate_parser.add_argument("--output")
     gate_parser.add_argument("--json", action="store_true")
+    execution_parser = benchmark_subparsers.add_parser(
+        "execution", help="Diagnose or recover resumable execution state"
+    )
+    execution_subparsers = execution_parser.add_subparsers(
+        dest="execution_command", required=True
+    )
+    execution_diagnose = execution_subparsers.add_parser(
+        "diagnose", help="Inspect interrupted attempts and exact worktree leases"
+    )
+    execution_diagnose.add_argument("state_file")
+    execution_diagnose.add_argument("--json", action="store_true")
+    execution_recover = execution_subparsers.add_parser(
+        "recover", help="Recover only leases declared as running in state"
+    )
+    execution_recover.add_argument("state_file")
+    execution_recover.add_argument("--json", action="store_true")
     return parser
 
 
@@ -483,6 +515,20 @@ def main(
             _print_payload(payload, as_json=args.json)
             return exit_code
 
+        if args.benchmark_command == "execution":
+            try:
+                payload = (
+                    diagnose_execution_state(args.state_file)
+                    if args.execution_command == "diagnose"
+                    else recover_execution_state(args.state_file)
+                )
+                exit_code = int(ExitCode.SUCCESS)
+            except (ExecutionError, WorktreeError, GitError) as error:
+                payload = {"valid": False, "error": str(error)}
+                exit_code = int(ExitCode.INVALID_INPUT)
+            _print_payload(payload, as_json=args.json)
+            return exit_code
+
         try:
             if args.benchmark_command == "validate":
                 task = load_benchmark_task(args.task_file)
@@ -500,6 +546,61 @@ def main(
             else:
                 runner = benchmark_runner_factory()
                 command_argv = tuple(argv) if argv is not None else tuple(sys.argv[1:])
+                if (
+                    args.state_file is None
+                    and (
+                        args.resume
+                        or args.max_workers != 1
+                        or args.max_pairs is not None
+                        or args.max_runtime_seconds is not None
+                        or args.max_total_tokens is not None
+                    )
+                ):
+                    raise ExecutionError(
+                        "resume, concurrency, and budgets require --state-file"
+                    )
+                if args.state_file is not None:
+                    execution_tasks = tuple(
+                        ExecutionTask(task_file, load_benchmark_task(task_file))
+                        for task_file in args.task_files
+                    )
+                    state = ResumableBenchmarkExecutor(runner).execute(
+                        execution_tasks,
+                        state_file=args.state_file,
+                        output_dir=args.output_dir,
+                        experiment_id=args.experiment_id,
+                        sandbox=args.sandbox,
+                        model=args.model,
+                        codex_command=(args.codex_command,)
+                        if args.codex_command
+                        else None,
+                        start_condition=args.start_condition,
+                        context_timeout_seconds=args.context_timeout,
+                        worktree_root=args.worktree_root,
+                        exact_command=default_exact_command(command_argv),
+                        max_workers=args.max_workers,
+                        budget=ExecutionBudget(
+                            max_pairs=args.max_pairs,
+                            max_runtime_seconds=args.max_runtime_seconds,
+                            max_total_tokens=args.max_total_tokens,
+                        ),
+                        resume=args.resume,
+                    )
+                    usage = state["usage"]
+                    payload = {
+                        "valid": True,
+                        "experiment_id": args.experiment_id,
+                        "execution_id": state["execution_id"],
+                        "status": state["status"],
+                        "stop_reason": state["stop_reason"],
+                        "completed_pairs": usage["completed_pairs"],
+                        "artifact_count": usage["completed_attempts"],
+                        "output_dir": str(Path(args.output_dir).resolve()),
+                        "state_file": str(Path(args.state_file).resolve()),
+                    }
+                    exit_code = int(ExitCode.SUCCESS)
+                    _print_payload(payload, as_json=args.json)
+                    return exit_code
                 artifacts = []
                 for task_file in args.task_files:
                     task = load_benchmark_task(task_file)
@@ -528,7 +629,7 @@ def main(
                     "passed": sum(artifact.score.passed for artifact in artifacts),
                 }
                 exit_code = int(ExitCode.SUCCESS)
-        except (BenchmarkRunError, BenchmarkValidationError) as error:
+        except (BenchmarkRunError, BenchmarkValidationError, ExecutionError) as error:
             payload = {"valid": False, "error": str(error)}
             exit_code = int(ExitCode.INVALID_INPUT)
         _print_payload(payload, as_json=args.json)

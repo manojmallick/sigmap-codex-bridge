@@ -1,4 +1,5 @@
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -36,8 +37,11 @@ class WorktreeManagerTests(unittest.TestCase):
             manager = WorktreeManager(repo, root=root)
             lease = manager.create("interrupted-run", base_commit)
 
+            active = manager.diagnose("interrupted-run")
+
             recovered = WorktreeManager(repo, root=root).recover("interrupted-run")
 
+            self.assertEqual(active["status"], "active")
             self.assertEqual(recovered, lease)
             self.assertFalse(Path(lease.path).exists())
             self.assertFalse((root / "leases" / "interrupted-run.json").exists())
@@ -57,10 +61,44 @@ class WorktreeManagerTests(unittest.TestCase):
             value["path"] = str(unrelated)
             lease_path.write_text(json.dumps(value), encoding="utf-8")
 
+            diagnostic = manager.diagnose("run-one")
+
             with self.assertRaises(WorktreeError):
                 manager.recover("run-one")
 
+            self.assertEqual(diagnostic["status"], "invalid")
             self.assertTrue(unrelated.exists())
+
+    def test_diagnoses_missing_and_stale_exact_leases(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            repo = temp / "repo"
+            base_commit = initialize_repo(repo)
+            root = temp / "managed"
+            manager = WorktreeManager(repo, root=root)
+
+            missing = manager.diagnose("not-created")
+            lease = manager.create("stale-run", base_commit)
+            subprocess.run(
+                (
+                    "git",
+                    "-C",
+                    str(repo),
+                    "worktree",
+                    "remove",
+                    "--force",
+                    lease.path,
+                ),
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            stale = manager.diagnose("stale-run")
+            manager.recover("stale-run")
+
+            self.assertEqual(missing["status"], "missing")
+            self.assertEqual(stale["status"], "stale")
+            self.assertFalse((root / "leases" / "stale-run.json").exists())
 
 
 if __name__ == "__main__":
