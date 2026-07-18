@@ -39,6 +39,8 @@ def bridge_factory(sigmap_mode: str = "ready", codex_mode: str = "success"):
                 timeout_seconds=0.05 if codex_mode == "timeout" else 1.0,
                 env={"FAKE_CODEX_MODE": codex_mode},
             ),
+            isolate_runs=False,
+            audit_runs=False,
         )
 
     return factory

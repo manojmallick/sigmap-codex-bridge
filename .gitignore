@@ -18,6 +18,8 @@ venv/
 
 # Bridge runtime and audit artifacts
 .sigmap_bridge_audit.jsonl
+.sigmap_bridge_audit.jsonl.head
+.sigmap_bridge_audit.jsonl.lock
 .bridge-worktrees/
 benchmark_runs/
 

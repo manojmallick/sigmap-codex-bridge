@@ -5,9 +5,11 @@ layer for measuring how ranked repository context affects Codex task outcomes.
 
 ## Current status
 
-This repository is implementing **v0.1.0**: a contract-tested bridge core. It
-passes SigMap-ranked context to Codex through stdin and parses the resulting
-Codex JSONL event stream. It does not yet contain measured benchmark results.
+This repository is implementing **v0.2.0**: isolated, traceable bridge runs. It
+passes SigMap-ranked context to Codex through stdin in a detached Git worktree,
+parses the Codex JSONL event stream, captures the resulting Git changes, and
+appends a tamper-detecting audit record. It does not yet contain measured
+benchmark results.
 
 The hypothesis is:
 
@@ -26,7 +28,7 @@ independent correctness checks has been implemented and run.
 - [`docs/adr/0001-codex-context-injection.md`](docs/adr/0001-codex-context-injection.md)
   — initial Codex integration decision
 
-## Install the baseline
+## Install
 
 The package has no Python runtime dependencies. Python 3.10 or newer, Git,
 Codex, Node.js, and SigMap are required for a live run.
@@ -54,6 +56,28 @@ sigmap-bridge run "Fix the JWT validation bug" --repo ./your-repo --no-sigmap --
 The bridge fails closed when SigMap was requested but its index is unavailable;
 it never silently runs the raw condition as a grounded success.
 
+Every normal run is pinned to the source repository's `HEAD` in a dedicated
+worktree. Uncommitted source changes are recorded as a dirty precondition but
+are not copied into the run. Successful cleanup removes only the bridge-owned,
+Git-recognized worktree lease.
+
+Verify the audit chain and its atomic head checkpoint:
+
+```bash
+sigmap-bridge verify --repo ./your-repo --json
+```
+
+Recover one worktree left by an interrupted process:
+
+```bash
+sigmap-bridge cleanup <run-id> --repo ./your-repo --json
+```
+
+Audit records contain the full SHA-256 digest of context, not raw context or
+task text. The local chain and checkpoint detect ordinary modification,
+deletion, insertion, and reordering. They are not a signed or externally
+anchored attestation against an actor able to rewrite both audit files.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -68,6 +92,11 @@ it never silently runs the raw condition as a grounded success.
 | `31` | Codex timed out |
 | `32` | Codex JSONL malformed or incomplete |
 | `33` | Codex reported or returned a failure |
+| `40` | Git inspection or change capture failed |
+| `41` | Isolated worktree creation failed |
+| `42` | Scoped worktree cleanup failed |
+| `43` | Audit append failed |
+| `44` | Audit verification failed |
 
 ## License
 
