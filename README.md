@@ -5,11 +5,12 @@ layer for measuring how ranked repository context affects Codex task outcomes.
 
 ## Current status
 
-This repository is implementing **v0.2.0**: isolated, traceable bridge runs. It
-passes SigMap-ranked context to Codex through stdin in a detached Git worktree,
-parses the Codex JSONL event stream, captures the resulting Git changes, and
-appends a tamper-detecting audit record. It does not yet contain measured
-benchmark results.
+This repository is implementing **v0.3.0**: an independent benchmark
+specification on top of isolated, traceable bridge runs. It validates versioned
+YAML/JSON tasks, rejects invalid or already-failing baselines in detached Git
+worktrees, and defines correctness and efficiency scorers that do not use
+retrieved context as ground truth. It does not yet contain measured benchmark
+results.
 
 The hypothesis is:
 
@@ -27,11 +28,13 @@ independent correctness checks has been implemented and run.
   acceptance plan
 - [`docs/adr/0001-codex-context-injection.md`](docs/adr/0001-codex-context-injection.md)
   — initial Codex integration decision
+- [`docs/benchmark-specification.md`](docs/benchmark-specification.md) — task
+  contract, metric definitions, and threats to validity
 
 ## Install
 
-The package has no Python runtime dependencies. Python 3.10 or newer, Git,
-Codex, Node.js, and SigMap are required for a live run.
+Python 3.10 or newer and Git are required. PyYAML is installed with the package;
+Codex, Node.js, and SigMap are additionally required for a live bridge run.
 
 ```bash
 python -m venv .venv
@@ -72,6 +75,18 @@ Recover one worktree left by an interrupted process:
 ```bash
 sigmap-bridge cleanup <run-id> --repo ./your-repo --json
 ```
+
+Validate a versioned benchmark task, then check its clean baseline in an
+isolated worktree:
+
+```bash
+sigmap-bridge benchmark validate benchmarks/task.yaml --json
+sigmap-bridge benchmark preflight benchmarks/task.yaml --json
+```
+
+Task commands are argument arrays, never shell strings. Preflight rejects dirty
+source repositories, missing revisions or executables, setup failures, and task
+tests that already fail at the declared revision.
 
 Audit records contain the full SHA-256 digest of context, not raw context or
 task text. The local chain and checkpoint detect ordinary modification,

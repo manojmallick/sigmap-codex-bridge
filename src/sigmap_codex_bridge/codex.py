@@ -36,6 +36,8 @@ class CodexResult:
     file_changes: tuple[str, ...] = ()
     usage: CodexUsage = field(default_factory=CodexUsage)
     event_count: int = 0
+    tool_event_count: int = 0
+    command_event_count: int = 0
     detail: str | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -46,6 +48,8 @@ class CodexResult:
             "file_changes": list(self.file_changes),
             "usage": asdict(self.usage),
             "event_count": self.event_count,
+            "tool_event_count": self.tool_event_count,
+            "command_event_count": self.command_event_count,
             "detail": self.detail,
             "process": self.process.to_dict(),
         }
@@ -78,6 +82,23 @@ def _file_change_paths(item: Mapping[str, Any]) -> set[str]:
             if isinstance(path, str):
                 paths.add(path)
     return paths
+
+
+def _action_counts(events: Sequence[Mapping[str, Any]]) -> tuple[int, int]:
+    tool_types = {"mcp_tool_call", "tool_call", "web_search"}
+    command_types = {"command", "command_execution"}
+    tools = 0
+    commands = 0
+    for event in events:
+        if event.get("type") != "item.completed":
+            continue
+        item = event.get("item")
+        if not isinstance(item, Mapping):
+            continue
+        item_type = item.get("type")
+        tools += int(item_type in tool_types)
+        commands += int(item_type in command_types)
+    return tools, commands
 
 
 def parse_codex_jsonl(process: ProcessResult) -> CodexResult:
@@ -124,6 +145,7 @@ def parse_codex_jsonl(process: ProcessResult) -> CodexResult:
     usage = CodexUsage()
     completed = False
     failure_detail: str | None = None
+    tool_event_count, command_event_count = _action_counts(events)
 
     for event in events:
         event_type = event.get("type")
@@ -157,6 +179,8 @@ def parse_codex_jsonl(process: ProcessResult) -> CodexResult:
             file_changes=tuple(sorted(file_changes)),
             usage=usage,
             event_count=len(events),
+            tool_event_count=tool_event_count,
+            command_event_count=command_event_count,
             detail=failure_detail or f"Codex exited with status {process.returncode}",
         )
     if failure_detail is not None:
@@ -168,6 +192,8 @@ def parse_codex_jsonl(process: ProcessResult) -> CodexResult:
             file_changes=tuple(sorted(file_changes)),
             usage=usage,
             event_count=len(events),
+            tool_event_count=tool_event_count,
+            command_event_count=command_event_count,
             detail=failure_detail,
         )
     if not completed:
@@ -178,6 +204,8 @@ def parse_codex_jsonl(process: ProcessResult) -> CodexResult:
             final_message=final_message,
             file_changes=tuple(sorted(file_changes)),
             event_count=len(events),
+            tool_event_count=tool_event_count,
+            command_event_count=command_event_count,
             detail="JSONL stream ended without turn.completed",
         )
     return CodexResult(
@@ -188,6 +216,8 @@ def parse_codex_jsonl(process: ProcessResult) -> CodexResult:
         file_changes=tuple(sorted(file_changes)),
         usage=usage,
         event_count=len(events),
+        tool_event_count=tool_event_count,
+        command_event_count=command_event_count,
     )
 
 

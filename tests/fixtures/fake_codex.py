@@ -48,6 +48,14 @@ else:
         },
         {
             "type": "item.completed",
+            "item": {"id": "command-1", "type": "command_execution"},
+        },
+        {
+            "type": "item.completed",
+            "item": {"id": "tool-1", "type": "mcp_tool_call"},
+        },
+        {
+            "type": "item.completed",
             "item": {
                 "id": "message-1",
                 "type": "agent_message",
