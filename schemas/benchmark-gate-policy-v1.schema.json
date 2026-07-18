@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/benchmark-gate-policy-v1.schema.json",
+  "title": "SigMap Codex Bridge regression gate policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "policy_id", "thresholds"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "policy_id": { "type": "string", "minLength": 1 },
+    "thresholds": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "require_sigmap_correct_if_raw_correct": { "const": true },
+        "max_runtime_ratio": { "type": "number", "exclusiveMinimum": 0 },
+        "max_input_tokens_ratio": { "type": "number", "exclusiveMinimum": 0 },
+        "max_output_tokens_ratio": { "type": "number", "exclusiveMinimum": 0 },
+        "max_unexpected_files": { "type": "integer", "minimum": 0 },
+        "require_worktree_cleanup": { "const": true }
+      }
+    }
+  }
+}

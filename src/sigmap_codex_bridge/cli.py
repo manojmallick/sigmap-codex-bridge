@@ -11,6 +11,7 @@ from pathlib import Path
 from .audit import AuditLog
 from .benchmark import BenchmarkValidationError, load_benchmark_task
 from .bridge import Bridge, BridgeResult, ExitCode
+from .comparison import ComparisonError, compare_directories, write_comparison
 from .demo import DemoError, render_replay, replay_demo
 from .doctor import render_doctor, run_doctor
 from .experiment import (
@@ -19,6 +20,7 @@ from .experiment import (
     default_exact_command,
 )
 from .git import GitError
+from .gates import GateError, evaluate_gate_directory, write_gate_result
 from .pack import (
     PackValidationError,
     export_pack,
@@ -230,6 +232,21 @@ def build_parser() -> argparse.ArgumentParser:
     report_parser.add_argument("--json-output")
     report_parser.add_argument("--markdown-output")
     report_parser.add_argument("--json", action="store_true")
+    compare_parser = benchmark_subparsers.add_parser(
+        "compare", help="Compare compatible paired experiments"
+    )
+    compare_parser.add_argument("baseline_dir")
+    compare_parser.add_argument("candidate_dir")
+    compare_parser.add_argument("--allow-incompatible", action="store_true")
+    compare_parser.add_argument("--output")
+    compare_parser.add_argument("--json", action="store_true")
+    gate_parser = benchmark_subparsers.add_parser(
+        "gate", help="Apply explicit paired regression thresholds"
+    )
+    gate_parser.add_argument("artifact_dir")
+    gate_parser.add_argument("policy_file")
+    gate_parser.add_argument("--output")
+    gate_parser.add_argument("--json", action="store_true")
     return parser
 
 
@@ -430,6 +447,38 @@ def main(
                 exit_code = int(ExitCode.SUCCESS)
             except ReportError as error:
                 payload = {"valid": False, "error": str(error)}
+                exit_code = int(ExitCode.INVALID_INPUT)
+            _print_payload(payload, as_json=args.json)
+            return exit_code
+
+        if args.benchmark_command == "compare":
+            try:
+                payload = compare_directories(
+                    args.baseline_dir,
+                    args.candidate_dir,
+                    allow_incompatible=args.allow_incompatible,
+                )
+                if args.output:
+                    write_comparison(args.output, payload)
+                exit_code = int(ExitCode.SUCCESS)
+            except ComparisonError as error:
+                payload = {"compatible": False, "error": str(error)}
+                exit_code = int(ExitCode.INVALID_INPUT)
+            _print_payload(payload, as_json=args.json)
+            return exit_code
+
+        if args.benchmark_command == "gate":
+            try:
+                payload = evaluate_gate_directory(args.policy_file, args.artifact_dir)
+                if args.output:
+                    write_gate_result(args.output, payload)
+                exit_code = (
+                    int(ExitCode.SUCCESS)
+                    if payload["passed"]
+                    else int(ExitCode.BENCHMARK_REGRESSION)
+                )
+            except GateError as error:
+                payload = {"passed": False, "error": str(error)}
                 exit_code = int(ExitCode.INVALID_INPUT)
             _print_payload(payload, as_json=args.json)
             return exit_code

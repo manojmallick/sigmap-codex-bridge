@@ -6,8 +6,9 @@ OpenAI Build Week 2026.
 
 ## Current status
 
-The **v0.7.0** development line adds an independent replication kit while
-preserving the frozen v0.6.0 Build Week candidate. The final submission remains
+The **v0.8.0** development line adds paired analysis and explicit regression
+gates on top of the independent replication kit while preserving the frozen
+v0.6.0 Build Week candidate. The final submission remains
 explicitly blocked until real `/feedback`, video, and Devpost values replace
 the null fields in submission metadata; no v0.7 work changes that evidence.
 
@@ -53,6 +54,8 @@ that changed the implementation.
   contract, metric definitions, and threats to validity
 - [`docs/independent-replication.md`](docs/independent-replication.md) — portable
   pack lifecycle, independent run procedure, integrity checks, and non-claims
+- [`docs/paired-analysis-and-gates.md`](docs/paired-analysis-and-gates.md) —
+  paired deltas, uncertainty boundary, compatibility strata, and CI policies
 - [`docs/judge-quickstart.md`](docs/judge-quickstart.md) — five-minute install,
   zero-credit replay, and separate opt-in live path
 - [`docs/challenges-and-limitations.md`](docs/challenges-and-limitations.md) —
@@ -186,6 +189,27 @@ Regenerate byte-stable JSON and Markdown summaries from the retained artifacts:
 sigmap-bridge benchmark report benchmark_runs --json
 ```
 
+Reports include within-pair runtime, input-token, and output-token deltas,
+direction counts, median/MAD effects, and a deterministic paired-bootstrap
+interval only with at least 10 comparable pairs. Smaller samples explicitly say
+`insufficient_evidence`.
+
+Compare compatible experiments across revisions, then apply only thresholds
+declared in a strict policy:
+
+```bash
+sigmap-bridge benchmark compare baseline_runs candidate_runs \
+  --output comparison.json --json
+sigmap-bridge benchmark gate candidate_runs benchmark-policy.yaml \
+  --output gate-result.json --json
+```
+
+Comparison rejects task, model, Codex-command, platform, or benchmark-pack
+mismatches unless `--allow-incompatible` records the override and every
+mismatched stratum. Gate failures return exit code `50`; invalid inputs return
+`2`. See the [paired analysis and gates guide](docs/paired-analysis-and-gates.md)
+for formulas, policy fields, interpretation rules, and non-claims.
+
 Each raw artifact records the resolved revision, pair and order identifiers,
 environment and exact command, context/Codex process outcomes, candidate tests,
 static checks, repository changes, independent score, cleanup result, and all
@@ -235,6 +259,7 @@ anchored attestation against an actor able to rewrite both audit files.
 | `42` | Scoped worktree cleanup failed |
 | `43` | Audit append failed |
 | `44` | Audit verification failed |
+| `50` | A declared benchmark regression threshold failed |
 
 ## License
 

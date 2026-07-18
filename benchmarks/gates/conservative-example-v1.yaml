@@ -1,0 +1,9 @@
+schema_version: 1
+policy_id: conservative-example-v1
+thresholds:
+  require_sigmap_correct_if_raw_correct: true
+  max_runtime_ratio: 2.0
+  max_input_tokens_ratio: 2.0
+  max_output_tokens_ratio: 2.0
+  max_unexpected_files: 1
+  require_worktree_cleanup: true

@@ -23,6 +23,19 @@
     "environments": { "type": "array", "items": { "type": "object" } },
     "overall": { "$ref": "#/$defs/conditionMap" },
     "comparisons": { "type": "object" },
+    "paired_analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pair_count", "complete_pair_count", "minimum_confidence_pairs", "incomplete_pairs", "correctness_transitions", "metrics"],
+      "properties": {
+        "pair_count": { "type": "integer", "minimum": 0 },
+        "complete_pair_count": { "type": "integer", "minimum": 0 },
+        "minimum_confidence_pairs": { "type": "integer", "minimum": 1 },
+        "incomplete_pairs": { "type": "array", "items": { "type": "object" } },
+        "correctness_transitions": { "type": "object" },
+        "metrics": { "type": "object" }
+      }
+    },
     "tasks": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/conditionMap" }

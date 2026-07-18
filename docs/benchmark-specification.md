@@ -76,7 +76,12 @@ plus a Markdown rendering. Inputs are sorted by experiment, task, repetition,
 and within-pair position, so identical inputs produce byte-identical reports.
 Success rates use all attempted runs. Efficiency metrics use medians, failures
 remain enumerated, and comparisons are `null` when their raw denominator is
-zero.
+zero. Additive v0.8 paired analysis preserves old report-schema-v1 validity and
+marks incomplete pairs, missing metrics, zero relative denominators, and
+sub-10-pair uncertainty explicitly. The
+[paired analysis and gates guide](paired-analysis-and-gates.md) defines delta
+signs, the confidence-interval boundary, compatibility strata, regression
+policies, and interpretation non-claims.
 
 ## Threats to validity
 

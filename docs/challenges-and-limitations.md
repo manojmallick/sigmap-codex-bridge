@@ -57,6 +57,12 @@ in every checked-in aggregate and in the zero-credit replay.
   of fresh evidence are still needed before claiming external replication.
 - Runtime and token use can vary with service load, model changes, cache state,
   and Codex CLI behavior even when task order alternates.
+- Paired median/MAD summaries reduce sensitivity to outliers but do not remove
+  task-selection or external-service bias. The 10-pair bootstrap boundary is an
+  operational disclosure rule, not a claim of statistical power.
+- Compatibility overrides make cross-environment differences visible; they do
+  not turn mismatched model, CLI, platform, task, or pack strata into
+  like-for-like evidence.
 - The replay is historical and deliberately receives zero benchmark credit. It
   verifies package integrity and makes existing evidence easy to inspect; only
   a new live run can produce fresh evidence.

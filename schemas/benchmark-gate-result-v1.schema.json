@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/benchmark-gate-result-v1.schema.json",
+  "title": "SigMap Codex Bridge regression gate result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["gate_result_schema_version", "policy_id", "thresholds", "passed", "pair_count", "check_count", "failure_count", "checks"],
+  "properties": {
+    "gate_result_schema_version": { "const": 1 },
+    "policy_id": { "type": "string", "minLength": 1 },
+    "thresholds": { "type": "object" },
+    "passed": { "type": "boolean" },
+    "pair_count": { "type": "integer", "minimum": 0 },
+    "check_count": { "type": "integer", "minimum": 0 },
+    "failure_count": { "type": "integer", "minimum": 0 },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["experiment_id", "task_id", "repetition", "pair_id", "metric", "baseline", "observed", "threshold", "comparison_value", "evaluable", "passed", "detail"],
+        "properties": {
+          "experiment_id": { "type": "string" },
+          "task_id": { "type": "string" },
+          "repetition": { "type": "integer", "minimum": 1 },
+          "pair_id": { "type": "string" },
+          "metric": { "type": "string" },
+          "baseline": {},
+          "observed": {},
+          "threshold": {},
+          "comparison_value": {},
+          "evaluable": { "type": "boolean" },
+          "passed": { "type": "boolean" },
+          "detail": { "type": "string" }
+        }
+      }
+    }
+  }
+}

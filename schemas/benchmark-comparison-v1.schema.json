@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/benchmark-comparison-v1.schema.json",
+  "title": "SigMap Codex Bridge experiment comparison v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["comparison_schema_version", "compatible", "compatibility_override", "mismatches", "baseline", "candidate", "strata"],
+  "properties": {
+    "comparison_schema_version": { "const": 1 },
+    "compatible": { "type": "boolean" },
+    "compatibility_override": { "type": "boolean" },
+    "mismatches": { "type": "array", "items": { "type": "object" } },
+    "baseline": { "$ref": "#/$defs/dataset" },
+    "candidate": { "$ref": "#/$defs/dataset" },
+    "strata": { "type": "array", "items": { "type": "object" } }
+  },
+  "$defs": {
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_count", "experiment_ids", "resolved_revisions"],
+      "properties": {
+        "artifact_count": { "type": "integer", "minimum": 1 },
+        "experiment_ids": { "type": "array", "items": { "type": "string" } },
+        "resolved_revisions": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

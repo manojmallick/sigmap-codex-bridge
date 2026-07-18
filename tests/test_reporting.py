@@ -80,6 +80,23 @@ class ReportingTests(unittest.TestCase):
             self.assertEqual(
                 report["comparisons"]["sigmap_to_raw_success_rate_ratio"], 0.5
             )
+            self.assertEqual(report["paired_analysis"]["complete_pair_count"], 2)
+            self.assertEqual(
+                report["paired_analysis"]["correctness_transitions"],
+                {
+                    "both_passed": 1,
+                    "raw_only_passed": 1,
+                    "sigmap_only_passed": 0,
+                    "both_failed": 0,
+                },
+            )
+            self.assertEqual(
+                report["paired_analysis"]["metrics"]["runtime_seconds"]["effect"][
+                    "median_delta"
+                ],
+                -1.0,
+            )
+            self.assertIn("insufficient evidence", first_md.read_text(encoding="utf-8"))
             self.assertEqual(len(report["failures"]), 1)
             self.assertIn("candidate tests failed", first_md.read_text(encoding="utf-8"))
             self.assertEqual(len(load_artifacts(artifacts)), 4)

@@ -36,6 +36,11 @@ jobs:
         run: >-
           sigmap-bridge benchmark pack validate
           benchmark_packs/pypa-sampleproject-v1/pack.yaml --json
+      - name: Exercise explicit benchmark regression policy
+        run: >-
+          sigmap-bridge benchmark gate
+          benchmarks/results/build-week-2026-07-18/artifacts
+          benchmarks/gates/conservative-example-v1.yaml --json
       - name: Build distributions
         run: python -m build
       - name: Verify installed-wheel replay outside checkout

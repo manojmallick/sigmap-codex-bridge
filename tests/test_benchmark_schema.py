@@ -17,6 +17,9 @@ class BenchmarkSchemaTests(unittest.TestCase):
         names = (
             "benchmark-task-v1.schema.json",
             "benchmark-pack-v1.schema.json",
+            "benchmark-comparison-v1.schema.json",
+            "benchmark-gate-policy-v1.schema.json",
+            "benchmark-gate-result-v1.schema.json",
             "benchmark-run-artifact-v1.schema.json",
             "benchmark-report-v1.schema.json",
         )
