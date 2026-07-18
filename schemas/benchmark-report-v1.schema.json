@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/benchmark-report-v1.schema.json",
+  "title": "SigMap Codex Bridge benchmark report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_schema_version",
+    "artifact_count",
+    "experiment_ids",
+    "exact_commands",
+    "environments",
+    "overall",
+    "comparisons",
+    "tasks",
+    "failures"
+  ],
+  "properties": {
+    "report_schema_version": { "const": 1 },
+    "artifact_count": { "type": "integer", "minimum": 1 },
+    "experiment_ids": { "type": "array", "items": { "type": "string" } },
+    "exact_commands": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } },
+    "environments": { "type": "array", "items": { "type": "object" } },
+    "overall": { "$ref": "#/$defs/conditionMap" },
+    "comparisons": { "type": "object" },
+    "tasks": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/conditionMap" }
+    },
+    "failures": { "type": "array", "items": { "type": "object" } }
+  },
+  "$defs": {
+    "conditionMap": {
+      "type": "object",
+      "required": ["raw", "sigmap"],
+      "properties": {
+        "raw": { "$ref": "#/$defs/summary" },
+        "sigmap": { "$ref": "#/$defs/summary" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["attempts", "passed", "failed", "success_rate", "medians"],
+      "properties": {
+        "attempts": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "success_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "medians": { "type": "object" }
+      }
+    }
+  }
+}

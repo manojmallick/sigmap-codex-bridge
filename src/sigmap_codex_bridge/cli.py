@@ -4,14 +4,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from .audit import AuditLog
 from .benchmark import BenchmarkValidationError, load_benchmark_task
 from .bridge import Bridge, BridgeResult, ExitCode
+from .experiment import (
+    BenchmarkRunError,
+    PairedBenchmarkRunner,
+    default_exact_command,
+)
 from .git import GitError
 from .preflight import preflight_task
+from .reporting import ReportError, write_report
 from .worktree import WorktreeError, WorktreeManager
 
 
@@ -75,6 +82,43 @@ def build_parser() -> argparse.ArgumentParser:
     preflight_parser.add_argument("task_file")
     preflight_parser.add_argument("--worktree-root")
     preflight_parser.add_argument("--json", action="store_true")
+    benchmark_run_parser = benchmark_subparsers.add_parser(
+        "run", help="Run reproducible paired raw and SigMap conditions"
+    )
+    benchmark_run_parser.add_argument("task_files", nargs="+")
+    benchmark_run_parser.add_argument(
+        "--experiment-id", required=True, help="Stable experiment identifier"
+    )
+    benchmark_run_parser.add_argument(
+        "--output-dir", default="benchmark_runs", help="Raw artifact directory"
+    )
+    benchmark_run_parser.add_argument(
+        "--start-condition", choices=("raw", "sigmap"), default="raw"
+    )
+    benchmark_run_parser.add_argument(
+        "--sandbox",
+        choices=("read-only", "workspace-write", "danger-full-access"),
+        default="workspace-write",
+    )
+    benchmark_run_parser.add_argument("--model")
+    benchmark_run_parser.add_argument(
+        "--codex-command", help="Path to the Codex executable"
+    )
+    benchmark_run_parser.add_argument(
+        "--context-timeout",
+        type=float,
+        default=120.0,
+        help="SigMap retrieval timeout in seconds",
+    )
+    benchmark_run_parser.add_argument("--worktree-root")
+    benchmark_run_parser.add_argument("--json", action="store_true")
+    report_parser = benchmark_subparsers.add_parser(
+        "report", help="Regenerate JSON and Markdown reports from raw artifacts"
+    )
+    report_parser.add_argument("artifact_dir")
+    report_parser.add_argument("--json-output")
+    report_parser.add_argument("--markdown-output")
+    report_parser.add_argument("--json", action="store_true")
     return parser
 
 
@@ -123,15 +167,42 @@ def main(
     argv: Sequence[str] | None = None,
     *,
     bridge_factory: Callable[[], Bridge] = Bridge,
+    benchmark_runner_factory: Callable[[], PairedBenchmarkRunner] = PairedBenchmarkRunner,
 ) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "benchmark":
+        if args.benchmark_command == "report":
+            artifact_dir = Path(args.artifact_dir).resolve()
+            json_path = Path(args.json_output or artifact_dir / "report.json").resolve()
+            markdown_path = Path(
+                args.markdown_output or artifact_dir / "report.md"
+            ).resolve()
+            try:
+                report = write_report(
+                    artifact_dir,
+                    json_path=json_path,
+                    markdown_path=markdown_path,
+                )
+                payload = {
+                    "valid": True,
+                    "artifact_count": report["artifact_count"],
+                    "json_report": str(json_path),
+                    "markdown_report": str(markdown_path),
+                }
+                exit_code = int(ExitCode.SUCCESS)
+            except ReportError as error:
+                payload = {"valid": False, "error": str(error)}
+                exit_code = int(ExitCode.INVALID_INPUT)
+            _print_payload(payload, as_json=args.json)
+            return exit_code
+
         try:
-            task = load_benchmark_task(args.task_file)
             if args.benchmark_command == "validate":
+                task = load_benchmark_task(args.task_file)
                 payload = {"valid": True, "task": task.to_dict()}
                 exit_code = int(ExitCode.SUCCESS)
-            else:
+            elif args.benchmark_command == "preflight":
+                task = load_benchmark_task(args.task_file)
                 result = preflight_task(task, worktree_root=args.worktree_root)
                 payload = result.to_dict()
                 exit_code = (
@@ -139,7 +210,38 @@ def main(
                     if result.valid
                     else int(ExitCode.INVALID_INPUT)
                 )
-        except BenchmarkValidationError as error:
+            else:
+                runner = benchmark_runner_factory()
+                command_argv = tuple(argv) if argv is not None else tuple(sys.argv[1:])
+                artifacts = []
+                for task_file in args.task_files:
+                    task = load_benchmark_task(task_file)
+                    artifacts.extend(
+                        runner.run_task(
+                            task,
+                            task_file=task_file,
+                            output_dir=args.output_dir,
+                            experiment_id=args.experiment_id,
+                            sandbox=args.sandbox,
+                            model=args.model,
+                            codex_command=(args.codex_command,)
+                            if args.codex_command
+                            else None,
+                            start_condition=args.start_condition,
+                            context_timeout_seconds=args.context_timeout,
+                            worktree_root=args.worktree_root,
+                            exact_command=default_exact_command(command_argv),
+                        )
+                    )
+                payload = {
+                    "valid": True,
+                    "experiment_id": args.experiment_id,
+                    "artifact_count": len(artifacts),
+                    "output_dir": str(Path(args.output_dir).resolve()),
+                    "passed": sum(artifact.score.passed for artifact in artifacts),
+                }
+                exit_code = int(ExitCode.SUCCESS)
+        except (BenchmarkRunError, BenchmarkValidationError) as error:
             payload = {"valid": False, "error": str(error)}
             exit_code = int(ExitCode.INVALID_INPUT)
         _print_payload(payload, as_json=args.json)

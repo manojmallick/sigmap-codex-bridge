@@ -23,6 +23,7 @@ class CodexRunnerTests(unittest.TestCase):
             ROOT,
             context="ranked context",
             sandbox="workspace-write",
+            model="fixture-model",
         )
 
         self.assertEqual(result.status, CodexStatus.SUCCEEDED)
@@ -34,8 +35,16 @@ class CodexRunnerTests(unittest.TestCase):
         self.assertEqual(result.tool_event_count, 1)
         self.assertEqual(result.final_message, "fixture completed; context=True")
         self.assertEqual(
-            result.process.command[-5:],
-            ("exec", "--json", "--sandbox", "workspace-write", "fix auth"),
+            result.process.command[-7:],
+            (
+                "exec",
+                "--json",
+                "--sandbox",
+                "workspace-write",
+                "--model",
+                "fixture-model",
+                "fix auth",
+            ),
         )
 
     def test_raw_mode_sends_no_context(self) -> None:

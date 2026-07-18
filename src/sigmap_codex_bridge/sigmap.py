@@ -50,7 +50,7 @@ class SigMapContextProvider:
     def __init__(
         self,
         *,
-        command: Sequence[str] = ("npx", "sigmap"),
+        command: Sequence[str] = ("sigmap",),
         top: int = 8,
         timeout_seconds: float = 30.0,
         env: Mapping[str, str] | None = None,
@@ -61,6 +61,15 @@ class SigMapContextProvider:
         self.env = env
 
     def retrieve(self, task: str, repo_path: str | Path) -> ContextResult:
+        context_path = Path(repo_path) / ".context" / "query-context.md"
+        try:
+            before_context = (
+                (context_path.stat().st_mtime_ns, context_path.stat().st_size)
+                if context_path.is_file()
+                else None
+            )
+        except OSError:
+            before_context = None
         process = run_process(
             (
                 *self.command,
@@ -108,7 +117,23 @@ class SigMapContextProvider:
                 process=process,
             )
 
-        context = process.stdout.strip()
+        try:
+            after_context = (
+                (context_path.stat().st_mtime_ns, context_path.stat().st_size)
+                if context_path.is_file()
+                else None
+            )
+            context = (
+                context_path.read_text(encoding="utf-8").strip()
+                if after_context is not None and after_context != before_context
+                else process.stdout.strip()
+            )
+        except OSError as error:
+            return ContextResult(
+                status=ContextStatus.FAILED,
+                detail=f"Cannot read SigMap query context: {error}",
+                process=process,
+            )
         if not context:
             return ContextResult(
                 status=ContextStatus.FAILED,

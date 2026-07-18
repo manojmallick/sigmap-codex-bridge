@@ -242,7 +242,9 @@ class CodexRunner:
         *,
         context: str | None,
         sandbox: str,
+        model: str | None = None,
     ) -> CodexResult:
+        model_args = ("--model", model) if model else ()
         process = run_process(
             (
                 *self.command,
@@ -250,6 +252,7 @@ class CodexRunner:
                 "--json",
                 "--sandbox",
                 sandbox,
+                *model_args,
                 task,
             ),
             cwd=repo_path,

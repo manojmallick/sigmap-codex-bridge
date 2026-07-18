@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/benchmark-run-artifact-v1.schema.json",
+  "title": "SigMap Codex Bridge benchmark run artifact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_schema_version",
+    "experiment_id",
+    "task_id",
+    "task_file",
+    "resolved_revision",
+    "repetition",
+    "pair_id",
+    "condition",
+    "condition_order",
+    "order_position",
+    "started_at",
+    "finished_at",
+    "exact_command",
+    "environment",
+    "bridge",
+    "score",
+    "failure_details"
+  ],
+  "properties": {
+    "artifact_schema_version": { "const": 1 },
+    "experiment_id": { "type": "string", "minLength": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "task_file": { "type": "string", "minLength": 1 },
+    "resolved_revision": { "type": "string", "minLength": 1 },
+    "repetition": { "type": "integer", "minimum": 1 },
+    "pair_id": { "type": "string", "minLength": 1 },
+    "condition": { "enum": ["raw", "sigmap"] },
+    "condition_order": {
+      "type": "array",
+      "prefixItems": [
+        { "enum": ["raw", "sigmap"] },
+        { "enum": ["raw", "sigmap"] }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "order_position": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "started_at": { "type": "string", "minLength": 1 },
+    "finished_at": { "type": "string", "minLength": 1 },
+    "exact_command": { "type": "array", "items": { "type": "string" } },
+    "environment": { "type": "object" },
+    "bridge": { "type": "object" },
+    "score": {
+      "type": "object",
+      "required": ["passed", "tests_passed", "runtime_seconds", "input_tokens", "patch_lines"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "tests_passed": { "type": "boolean" },
+        "runtime_seconds": { "type": "number", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "patch_lines": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "failure_details": { "type": "array", "items": { "type": "string" } }
+  }
+}
