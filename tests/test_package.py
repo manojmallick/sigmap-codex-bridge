@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class PackageContractTests(unittest.TestCase):
     def test_public_exports_and_version(self) -> None:
-        self.assertEqual(package.__version__, "0.5.0")
+        self.assertEqual(package.__version__, "0.6.0")
         self.assertEqual(package.__all__[0], "Bridge")
         self.assertIs(package.BridgeResult, package.__dict__["BridgeResult"])
         self.assertEqual(int(package.ExitCode.SUCCESS), 0)
@@ -36,6 +36,7 @@ class PackageContractTests(unittest.TestCase):
         self.assertIn("run", completed.stdout)
         self.assertIn("demo", completed.stdout)
         self.assertIn("doctor", completed.stdout)
+        self.assertIn("submission", completed.stdout)
 
 
 if __name__ == "__main__":
