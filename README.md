@@ -1,14 +1,16 @@
 # SigMap Codex Bridge
 
-SigMap Codex Bridge is a planned, reproducible A/B evaluation and evidence
-layer for measuring how ranked repository context affects Codex task outcomes.
+SigMap Codex Bridge is a reproducible A/B evaluation and evidence layer for
+measuring how ranked repository context affects Codex task outcomes. Built for
+OpenAI Build Week 2026.
 
 ## Current status
 
-This repository is implementing **v0.5.0**: an installable, judge-ready CLI for
-the reproducible paired benchmark. A prominent zero-credit command replays the
-checked-in measured report entirely from verified wheel resources, while a
-separate doctor command diagnoses every prerequisite for a fresh live run.
+This repository is preparing **v0.6.0**, the Build Week submission candidate.
+The code, measured report, README, demo script, and submission copy use one
+frozen result and one claim. Repository-owned gates are complete only when CI
+passes; the final submission remains explicitly blocked until real `/feedback`,
+video, and Devpost values replace the null fields in submission metadata.
 
 The hypothesis is:
 
@@ -34,6 +36,12 @@ The checked-in [report](benchmarks/results/build-week-2026-07-18/report.md),
 and [methodology](benchmarks/results/build-week-2026-07-18/README.md) contain
 the complete environment, command, limitations, and all raw artifacts.
 
+The retained artifacts also contain 18 unique Codex thread IDs, nine raw runs
+with context disabled, nine SigMap runs with context ready, and 18 worktrees
+reported cleaned. The [measured-results and Codex narrative](docs/submission/measured-results-and-codex.md)
+ties those counts to dated commits and preserves the exact integration failures
+that changed the implementation.
+
 ## Project documents
 
 - [`SIGMAP_CODEX_BRIDGE_PLAN.md`](SIGMAP_CODEX_BRIDGE_PLAN.md) — original
@@ -48,6 +56,16 @@ the complete environment, command, limitations, and all raw artifacts.
   zero-credit replay, and separate opt-in live path
 - [`docs/challenges-and-limitations.md`](docs/challenges-and-limitations.md) —
   concrete failure diary and current scope limits
+- [`docs/submission/architecture.md`](docs/submission/architecture.md) — bridge,
+  paired benchmark, and evidence-boundary diagrams
+- [`docs/submission/demo-script.md`](docs/submission/demo-script.md) — timed
+  2:40 recording script that opens on the measured result
+- [`docs/submission/devpost-submission.md`](docs/submission/devpost-submission.md)
+  — aligned Build Week submission copy
+- [`docs/submission/release-checklist.md`](docs/submission/release-checklist.md) —
+  repository and external release gates
+- [`submission/build-week-2026.json`](submission/build-week-2026.json) —
+  machine-readable evidence, judge commands, deadline, and readiness status
 
 ## Install
 
@@ -89,6 +107,18 @@ sigmap-bridge doctor --repo ./your-repo --require-live --json
 unsupported states with an actionable fix. Live runs require external CLIs,
 network access, and may consume Codex/API credits; they are never part of the
 zero-credit replay.
+
+Validate that every published number still matches the frozen report and see
+which external Build Week fields remain:
+
+```bash
+sigmap-bridge submission validate submission/build-week-2026.json
+sigmap-bridge submission validate submission/build-week-2026.json --require-ready
+```
+
+The first command succeeds when repository evidence is internally consistent.
+The second deliberately exits nonzero until the real `/feedback` session ID,
+video URL, and Devpost URL are present and the metadata status is `ready`.
 
 ## Run
 
