@@ -1,0 +1,183 @@
+{
+  "artifact_count": 18,
+  "comparisons": {
+    "sigmap_to_raw_median_input_tokens_ratio": 0.733633557631846,
+    "sigmap_to_raw_median_runtime_ratio": 0.749090287129336,
+    "sigmap_to_raw_success_rate_ratio": 1.0
+  },
+  "environments": [
+    {
+      "bridge_version": "0.4.0",
+      "codex_command": [
+        "/Applications/ChatGPT.app/Contents/Resources/codex"
+      ],
+      "model": "gpt-5.6-sol",
+      "platform": "Darwin 25.5.0 (arm64)",
+      "python_version": "3.14.6",
+      "sandbox": "workspace-write",
+      "sigmap_command": [
+        "sigmap"
+      ]
+    }
+  ],
+  "exact_commands": [
+    [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-m",
+      "sigmap_codex_bridge",
+      "benchmark",
+      "run",
+      "benchmarks/tasks/artifact-run-status.yaml",
+      "benchmarks/tasks/markdown-comparisons.yaml",
+      "benchmarks/tasks/report-failure-exit.yaml",
+      "--experiment-id",
+      "build-week-2026-07-18",
+      "--output-dir",
+      "benchmark_runs/build-week-2026-07-18",
+      "--model",
+      "gpt-5.6-sol",
+      "--codex-command",
+      "/Applications/ChatGPT.app/Contents/Resources/codex",
+      "--context-timeout",
+      "120",
+      "--sandbox",
+      "workspace-write",
+      "--json"
+    ]
+  ],
+  "experiment_ids": [
+    "build-week-2026-07-18"
+  ],
+  "failures": [],
+  "overall": {
+    "raw": {
+      "attempts": 9,
+      "failed": 0,
+      "medians": {
+        "cached_input_tokens": 692992.0,
+        "command_events": 20.0,
+        "input_tokens": 766538.0,
+        "output_tokens": 7169.0,
+        "patch_lines": 58.0,
+        "runtime_seconds": 249.088759,
+        "tool_events": 0.0
+      },
+      "passed": 9,
+      "success_rate": 1.0
+    },
+    "sigmap": {
+      "attempts": 9,
+      "failed": 0,
+      "medians": {
+        "cached_input_tokens": 521216.0,
+        "command_events": 15.0,
+        "input_tokens": 562358.0,
+        "output_tokens": 4587.0,
+        "patch_lines": 56.0,
+        "runtime_seconds": 186.58997,
+        "tool_events": 0.0
+      },
+      "passed": 9,
+      "success_rate": 1.0
+    }
+  },
+  "report_schema_version": 1,
+  "tasks": {
+    "artifact-run-status": {
+      "raw": {
+        "attempts": 3,
+        "failed": 0,
+        "medians": {
+          "cached_input_tokens": 477440.0,
+          "command_events": 15.0,
+          "input_tokens": 534456.0,
+          "output_tokens": 6703.0,
+          "patch_lines": 49.0,
+          "runtime_seconds": 228.287773,
+          "tool_events": 0.0
+        },
+        "passed": 3,
+        "success_rate": 1.0
+      },
+      "sigmap": {
+        "attempts": 3,
+        "failed": 0,
+        "medians": {
+          "cached_input_tokens": 550400.0,
+          "command_events": 17.0,
+          "input_tokens": 606285.0,
+          "output_tokens": 5495.0,
+          "patch_lines": 41.0,
+          "runtime_seconds": 216.274036,
+          "tool_events": 0.0
+        },
+        "passed": 3,
+        "success_rate": 1.0
+      }
+    },
+    "markdown-comparisons": {
+      "raw": {
+        "attempts": 3,
+        "failed": 0,
+        "medians": {
+          "cached_input_tokens": 692992.0,
+          "command_events": 20.0,
+          "input_tokens": 766538.0,
+          "output_tokens": 7169.0,
+          "patch_lines": 58.0,
+          "runtime_seconds": 249.088759,
+          "tool_events": 0.0
+        },
+        "passed": 3,
+        "success_rate": 1.0
+      },
+      "sigmap": {
+        "attempts": 3,
+        "failed": 0,
+        "medians": {
+          "cached_input_tokens": 348416.0,
+          "command_events": 12.0,
+          "input_tokens": 402740.0,
+          "output_tokens": 4587.0,
+          "patch_lines": 56.0,
+          "runtime_seconds": 141.403587,
+          "tool_events": 0.0
+        },
+        "passed": 3,
+        "success_rate": 1.0
+      }
+    },
+    "report-failure-exit": {
+      "raw": {
+        "attempts": 3,
+        "failed": 0,
+        "medians": {
+          "cached_input_tokens": 847616.0,
+          "command_events": 22.0,
+          "input_tokens": 937367.0,
+          "output_tokens": 8422.0,
+          "patch_lines": 104.0,
+          "runtime_seconds": 266.105964,
+          "tool_events": 0.0
+        },
+        "passed": 3,
+        "success_rate": 1.0
+      },
+      "sigmap": {
+        "attempts": 3,
+        "failed": 0,
+        "medians": {
+          "cached_input_tokens": 473600.0,
+          "command_events": 15.0,
+          "input_tokens": 509165.0,
+          "output_tokens": 4467.0,
+          "patch_lines": 101.0,
+          "runtime_seconds": 183.293823,
+          "tool_events": 0.0
+        },
+        "passed": 3,
+        "success_rate": 1.0
+      }
+    }
+  }
+}
