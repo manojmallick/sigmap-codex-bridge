@@ -5,10 +5,11 @@
 Build the project as a reproducible **Codex context A/B evaluation and evidence
 layer**, not only as a subprocess wrapper.
 
-The primary user-facing command should eventually look like:
+The primary paired-run command is:
 
 ```bash
-sigmap-bridge compare benchmarks/tasks/jwt-null.yaml --repo ./spring-security-samples
+sigmap-bridge benchmark run benchmarks/tasks/artifact-run-status.yaml \
+  --experiment-id example --output-dir benchmark_runs/example --json
 ```
 
 It should run the same task in isolated Git worktrees, once without SigMap and
@@ -229,19 +230,118 @@ Acceptance gate:
 
 Tag: `v0.6.0-build-week`
 
+## Post-submission pre-v1 sequencing rule
+
+Do not start v0.7.0 while any v0.6.0 submission gate is incomplete. The video,
+primary `/feedback` session, Devpost entry, and deadline buffer have higher
+Build Week value than additional product surface. These releases exist to turn
+the submission prototype into independently reproducible, operationally safe
+evidence before the stable compatibility promise.
+
+## v0.7.0 — Independent replication kit
+
+Goal: let a third party reproduce the experiment on a repository not owned by
+this project without editing bridge code.
+
+1. `feat: define portable benchmark-pack manifests`
+   - Pin repository URL, revision, license, tasks, environment expectations,
+     setup commands, repetitions, and report schema versions.
+2. `feat: add benchmark pack init, validate, and export commands`
+   - Reject path escapes, mutable revisions, shell strings, missing licenses,
+     and report/artifact hash drift.
+3. `bench: publish one unrelated public-repository replication pack`
+   - Keep original and replication results separate; retain every failed run
+     and report environment/model differences.
+4. `docs: add an independent replicator guide`
+
+Acceptance gate:
+
+- A clean machine can clone the target, validate/preflight the pack, and run a
+  complete pair without changing Python source.
+- Imported artifacts are accepted only when pack, revision, schema, and hashes
+  match; original and replication evidence cannot be silently combined.
+- The reference pack uses a public repository with a compatible license and
+  clearly distinguishes third-party code from this project.
+- The replication report repeats the small-sample and external-service caveats
+  even if its result is favorable.
+
+Why before v1: this closes the largest current validity threat—the existing
+tasks, bridge, and context provider come from the same small repository.
+
+## v0.8.0 — Paired analysis and regression gates
+
+Goal: turn raw medians into honest, automatable experiment decisions without
+claiming statistical certainty from tiny samples.
+
+1. `feat: report paired deltas and uncertainty summaries`
+   - Add per-pair runtime/input/output deltas, direction counts, robust effect
+     summaries, and confidence intervals only when sample size permits.
+2. `feat: compare compatible experiments across revisions`
+   - Stratify by task, model, Codex CLI, platform, and benchmark-pack version;
+     reject or prominently label incompatible comparisons.
+3. `feat: add machine-readable benchmark regression gates`
+   - Support explicit correctness, runtime, token, unexpected-file, and cleanup
+     thresholds with stable exit codes suitable for CI.
+4. `test: validate zero denominators, missing metrics, and tiny samples`
+5. `docs: define interpretation rules and non-claims`
+
+Acceptance gate:
+
+- Report regeneration remains byte-stable and old v1 artifacts still load.
+- Samples below the declared minimum say “insufficient evidence” rather than
+  emitting a significance claim.
+- CI gates fail only on user-declared thresholds and always identify the exact
+  task, pair, metric, baseline, and observed value.
+- Cross-environment comparisons cannot be presented as like-for-like without
+  an explicit override recorded in the output.
+
+Why before v1: this converts the benchmark from a one-off report into a useful
+regression instrument while preserving epistemic honesty.
+
+## v0.9.0 — Resumable execution and cost controls
+
+Goal: make longer real-world experiments safe to interrupt, resume, and bound.
+
+1. `feat: add idempotent resumable benchmark state`
+   - Persist attempt identities and pair state atomically; never duplicate a
+     completed condition after restart.
+2. `feat: add bounded pair-aware concurrency`
+   - Parallelize independent pairs without sharing worktrees or allowing an
+     incomplete pair to enter aggregate reports.
+3. `feat: enforce runtime, run-count, and token budgets`
+   - Stop at pair boundaries, preserve completed artifacts, and explain which
+     budget ended the run; do not estimate monetary cost without price input.
+4. `feat: add interruption recovery and stale-lease diagnostics`
+5. `test: exercise crashes at every state transition`
+
+Acceptance gate:
+
+- Interrupting after either condition resumes deterministically and produces
+  exactly one artifact per declared attempt.
+- Concurrent and serial executions yield equivalent ordered reports from the
+  same retained artifacts.
+- Budget exhaustion never deletes evidence, starts a half-pair, or reports an
+  incomplete pair as comparable.
+- Recovery is scoped to bridge-owned leases and is tested on macOS and Linux.
+
+Why before v1: resumability and budgets are prerequisites for independent
+multi-repository runs, not optional dashboard polish.
+
 ## v1.0.0 — Post-submission stable release
 
-Do not spend Build Week time on this unless every v0.6.0 gate is already green.
+Start only after v0.7.0–v0.9.0 gates pass with at least one independent
+replication.
 
 Candidate commits:
 
-1. `feat: add resumable benchmark runs and bounded concurrency`
-2. `feat: add provider interface for alternative context strategies`
-3. `feat: export signed provenance attestations`
-4. `feat: publish aggregate comparison dashboard`
-5. `docs: define stable CLI and artifact schemas`
+1. `feat: add provider interface for alternative context strategies`
+2. `feat: export signed provenance attestations`
+3. `feat: publish aggregate comparison dashboard`
+4. `docs: define stable CLI and artifact schemas`
+5. `docs: publish compatibility and migration policy`
 
-Tag only after backward-compatibility, migration, and cross-platform tests pass.
+Tag only after backward-compatibility, migration, signed-provenance threat
+model, and cross-platform tests pass.
 
 ## Recommended critical path for July 18–20
 
