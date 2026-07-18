@@ -6,11 +6,11 @@ OpenAI Build Week 2026.
 
 ## Current status
 
-The **v0.8.0** development line adds paired analysis and explicit regression
-gates on top of the independent replication kit while preserving the frozen
+The **v0.9.0** development line adds atomic resumable execution, pair-aware
+concurrency, and explicit runtime/token/pair budgets while preserving the frozen
 v0.6.0 Build Week candidate. The final submission remains
 explicitly blocked until real `/feedback`, video, and Devpost values replace
-the null fields in submission metadata; no v0.7 work changes that evidence.
+the null fields in submission metadata; no post-v0.6 work changes that evidence.
 
 The hypothesis is:
 
@@ -56,6 +56,8 @@ that changed the implementation.
   pack lifecycle, independent run procedure, integrity checks, and non-claims
 - [`docs/paired-analysis-and-gates.md`](docs/paired-analysis-and-gates.md) —
   paired deltas, uncertainty boundary, compatibility strata, and CI policies
+- [`docs/resumable-execution.md`](docs/resumable-execution.md) — atomic state,
+  safe resume, pair-aware concurrency, budgets, diagnosis, and recovery
 - [`docs/judge-quickstart.md`](docs/judge-quickstart.md) — five-minute install,
   zero-credit replay, and separate opt-in live path
 - [`docs/challenges-and-limitations.md`](docs/challenges-and-limitations.md) —
@@ -182,6 +184,30 @@ sigmap-bridge benchmark run benchmarks/tasks/*.yaml \
   --output-dir benchmark_runs \
   --json
 ```
+
+Opt into resumable execution with a dedicated state file. Work can run across
+pairs concurrently, but the two conditions of each pair remain sequential:
+
+```bash
+sigmap-bridge benchmark run benchmarks/tasks/*.yaml \
+  --experiment-id build-week-resumable \
+  --output-dir benchmark_runs \
+  --state-file benchmark-state.json \
+  --max-workers 2 \
+  --max-pairs 10 \
+  --max-total-tokens 500000 \
+  --json
+
+sigmap-bridge benchmark run benchmarks/tasks/*.yaml \
+  --experiment-id build-week-resumable \
+  --output-dir benchmark_runs \
+  --state-file benchmark-state.json \
+  --resume --max-workers 2 --max-pairs 20 --json
+```
+
+Budgets stop only at pair boundaries; already-running pairs can overshoot
+runtime or token limits, and the state records that overshoot without claiming
+a monetary-cost estimate. See the [resumable execution guide](docs/resumable-execution.md).
 
 Regenerate byte-stable JSON and Markdown summaries from the retained artifacts:
 

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/benchmark-execution-state-v1.schema.json",
+  "title": "SigMap Codex Bridge resumable execution state v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["execution_state_schema_version", "execution_id", "experiment_id", "configuration_digest", "status", "stop_reason", "max_workers", "budgets", "usage", "output_dir", "worktree_root", "settings", "tasks", "pairs", "transition_count"],
+  "properties": {
+    "execution_state_schema_version": { "const": 1 },
+    "execution_id": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "experiment_id": { "type": "string", "minLength": 1 },
+    "configuration_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "status": { "enum": ["ready", "running", "stopped", "completed"] },
+    "stop_reason": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "budget", "threshold", "observed", "overshoot", "in_flight_pairs", "monetary_cost"],
+          "properties": {
+            "kind": { "type": "string", "minLength": 1 },
+            "budget": { "enum": ["max_pairs", "max_runtime_seconds", "max_total_tokens", null] },
+            "threshold": { "type": ["number", "integer", "null"] },
+            "observed": { "type": ["number", "integer", "null"] },
+            "overshoot": { "type": "number", "minimum": 0 },
+            "in_flight_pairs": { "type": "integer", "minimum": 0 },
+            "monetary_cost": { "type": "null" }
+          }
+        }
+      ]
+    },
+    "max_workers": { "type": "integer", "minimum": 1, "maximum": 32 },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_pairs", "max_runtime_seconds", "max_total_tokens"],
+      "properties": {
+        "max_pairs": { "type": ["integer", "null"], "minimum": 1 },
+        "max_runtime_seconds": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "max_total_tokens": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completed_pairs", "completed_attempts", "runtime_seconds", "total_tokens"],
+      "properties": {
+        "completed_pairs": { "type": "integer", "minimum": 0 },
+        "completed_attempts": { "type": "integer", "minimum": 0 },
+        "runtime_seconds": { "type": "number", "minimum": 0 },
+        "total_tokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "output_dir": { "type": "string", "minLength": 1 },
+    "worktree_root": { "type": ["string", "null"], "minLength": 1 },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sandbox", "model", "codex_command", "context_timeout_seconds", "start_condition", "exact_command"],
+      "properties": {
+        "sandbox": { "enum": ["read-only", "workspace-write", "danger-full-access"] },
+        "model": { "type": ["string", "null"], "minLength": 1 },
+        "codex_command": { "type": ["array", "null"], "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+        "context_timeout_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "start_condition": { "enum": ["raw", "sigmap"] },
+        "exact_command": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_file", "task_sha256", "repository", "resolved_revision", "task_id", "repetitions", "benchmark_pack"],
+        "properties": {
+          "task_file": { "type": "string", "minLength": 1 },
+          "task_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "repository": { "type": "string", "minLength": 1 },
+          "resolved_revision": { "type": "string", "minLength": 1 },
+          "task_id": { "type": "string", "minLength": 1 },
+          "repetitions": { "type": "integer", "minimum": 1 },
+          "benchmark_pack": { "type": ["object", "null"] }
+        }
+      }
+    },
+    "pairs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pair_key", "task_index", "repetition", "pair_id", "order", "status", "attempts"],
+        "properties": {
+          "pair_key": { "type": "string", "minLength": 1 },
+          "task_index": { "type": "integer", "minimum": 0 },
+          "repetition": { "type": "integer", "minimum": 1 },
+          "pair_id": { "type": "string", "minLength": 1 },
+          "order": {
+            "type": "array",
+            "prefixItems": [{ "enum": ["raw", "sigmap"] }, { "enum": ["raw", "sigmap"] }],
+            "items": false,
+            "minItems": 2
+          },
+          "status": { "enum": ["pending", "partial", "running", "complete"] },
+          "attempts": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["attempt_id", "condition", "position", "status", "artifact_path", "artifact_sha256", "run_id"],
+              "properties": {
+                "attempt_id": { "type": "string", "minLength": 1 },
+                "condition": { "enum": ["raw", "sigmap"] },
+                "position": { "type": "integer", "minimum": 1, "maximum": 2 },
+                "status": { "enum": ["pending", "running", "complete"] },
+                "artifact_path": { "type": "string", "pattern": "^[^/\\\\]+$" },
+                "artifact_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+                "run_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "transition_count": { "type": "integer", "minimum": 0 }
+  }
+}

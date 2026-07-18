@@ -178,3 +178,53 @@ class WorktreeManager:
         lease = self._read_lease(run_id)
         self.cleanup(lease)
         return lease
+
+    def diagnose(self, run_id: str) -> dict[str, object]:
+        """Inspect one exact managed lease without changing repository state."""
+
+        lease_path = self._lease_path(run_id)
+        expected_path = self._run_path(run_id).resolve()
+        if not lease_path.exists():
+            return {
+                "run_id": run_id,
+                "status": "missing",
+                "lease_path": str(lease_path),
+                "worktree_path": str(expected_path),
+                "path_exists": expected_path.exists(),
+                "git_registered": False,
+                "detail": "no bridge-owned lease file exists",
+            }
+        try:
+            lease = self._read_lease(run_id)
+        except WorktreeError as error:
+            return {
+                "run_id": run_id,
+                "status": "invalid",
+                "lease_path": str(lease_path),
+                "worktree_path": str(expected_path),
+                "path_exists": expected_path.exists(),
+                "git_registered": False,
+                "detail": str(error),
+            }
+        listed = run_process(
+            ("git", "-C", str(self.source_repo), "worktree", "list", "--porcelain"),
+            cwd=self.source_repo,
+            timeout_seconds=30,
+        )
+        registered = listed.ok and f"worktree {expected_path}" in listed.stdout.splitlines()
+        path_exists = expected_path.exists()
+        if path_exists and registered:
+            status = "active"
+            detail = f"lease is {lease.state} and its worktree is registered"
+        else:
+            status = "stale"
+            detail = "lease exists but its worktree path or Git registration is missing"
+        return {
+            "run_id": run_id,
+            "status": status,
+            "lease_path": str(lease_path),
+            "worktree_path": str(expected_path),
+            "path_exists": path_exists,
+            "git_registered": registered,
+            "detail": detail,
+        }

@@ -31,6 +31,7 @@
         "pair_count": { "type": "integer", "minimum": 0 },
         "complete_pair_count": { "type": "integer", "minimum": 0 },
         "minimum_confidence_pairs": { "type": "integer", "minimum": 1 },
+        "excluded_incomplete_attempt_count": { "type": "integer", "minimum": 0 },
         "incomplete_pairs": { "type": "array", "items": { "type": "object" } },
         "correctness_transitions": { "type": "object" },
         "metrics": { "type": "object" }

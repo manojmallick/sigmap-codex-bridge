@@ -3,6 +3,26 @@
 All notable changes to SigMap Codex Bridge are documented here. Versions before
 v0.6.0 correspond to the staged pull requests linked in the repository.
 
+## [0.9.0] — 2026-07-18
+
+### Added
+
+- Strict versioned execution-state snapshots with atomic checkpoints,
+  artifact reconciliation, configuration-drift detection, and safe resume.
+- Pair-aware bounded concurrency with sequential raw/SigMap conditions and
+  isolated, uniquely leased worktrees.
+- Pair, cumulative runtime, and cumulative token budgets with explicit
+  in-flight overshoot records and no monetary-cost estimate.
+- Exact-lease execution diagnosis/recovery commands and crash-transition,
+  concurrency, budget, corruption, CLI, and report regression coverage.
+
+### Changed
+
+- Package version advanced to 0.9.0 while benchmark task, run-artifact,
+  report, pack, and frozen submission contracts remain compatible.
+- Reports retain incomplete attempts and failures but exclude them from
+  aggregate condition metrics until their pair is complete.
+
 ## [0.8.0] — 2026-07-18
 
 ### Added

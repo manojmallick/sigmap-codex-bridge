@@ -9,7 +9,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterable, Mapping
 
-from .paired import PairingError, analyze_pairs
+from .paired import PairingError, analyze_pairs, pair_artifacts
 
 
 REPORT_SCHEMA_VERSION = 1
@@ -86,9 +86,36 @@ def generate_report(artifacts: Iterable[dict[str, object]]) -> dict[str, object]
             int(row["order_position"]),
         ),
     )
+    try:
+        pairs = pair_artifacts(rows)
+        paired_analysis = analyze_pairs(rows)
+    except PairingError as error:
+        raise ReportError(str(error)) from error
+    complete_keys = {
+        (pair.experiment_id, pair.task_id, pair.repetition, pair.pair_id)
+        for pair in pairs
+        if pair.complete
+    }
+    aggregate_rows = [
+        row
+        for row in rows
+        if (
+            str(row["experiment_id"]),
+            str(row["task_id"]),
+            int(row["repetition"]),
+            str(
+                row.get("pair_id")
+                or f"{row['task_id']}-r{int(row['repetition']):03d}"
+            ),
+        )
+        in complete_keys
+    ]
+    paired_analysis["excluded_incomplete_attempt_count"] = len(rows) - len(
+        aggregate_rows
+    )
     grouped: dict[tuple[str, str], list[dict[str, object]]] = defaultdict(list)
     overall: dict[str, list[dict[str, object]]] = defaultdict(list)
-    for row in rows:
+    for row in aggregate_rows:
         condition = str(row["condition"])
         grouped[(str(row["task_id"]), condition)].append(row)
         overall[condition].append(row)
@@ -139,10 +166,6 @@ def generate_report(artifacts: Iterable[dict[str, object]]) -> dict[str, object]
             sigmap_medians["input_tokens"], raw_medians["input_tokens"]
         ),
     }
-    try:
-        paired_analysis = analyze_pairs(rows)
-    except PairingError as error:
-        raise ReportError(str(error)) from error
     return {
         "report_schema_version": REPORT_SCHEMA_VERSION,
         "artifact_count": len(rows),
@@ -192,6 +215,11 @@ def render_markdown(report: Mapping[str, object]) -> str:
             f"Confidence intervals require {paired['minimum_confidence_pairs']} "
             "comparable pairs."
         )
+        excluded = paired.get("excluded_incomplete_attempt_count", 0)
+        if excluded:
+            lines.append(
+                f"Excluded incomplete attempts from aggregate summaries: {excluded}."
+            )
         lines.extend(
             (
                 "",
