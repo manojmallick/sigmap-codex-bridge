@@ -8,8 +8,10 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from .audit import AuditLog
+from .benchmark import BenchmarkValidationError, load_benchmark_task
 from .bridge import Bridge, BridgeResult, ExitCode
 from .git import GitError
+from .preflight import preflight_task
 from .worktree import WorktreeError, WorktreeManager
 
 
@@ -55,6 +57,24 @@ def build_parser() -> argparse.ArgumentParser:
     cleanup_parser.add_argument("--repo", default=".", help="Source repository")
     cleanup_parser.add_argument("--worktree-root", help="Managed worktree root")
     cleanup_parser.add_argument("--json", action="store_true")
+
+    benchmark_parser = subparsers.add_parser(
+        "benchmark", help="Validate and preflight benchmark task specifications"
+    )
+    benchmark_subparsers = benchmark_parser.add_subparsers(
+        dest="benchmark_command", required=True
+    )
+    validate_parser = benchmark_subparsers.add_parser(
+        "validate", help="Validate a YAML or JSON benchmark task"
+    )
+    validate_parser.add_argument("task_file")
+    validate_parser.add_argument("--json", action="store_true")
+    preflight_parser = benchmark_subparsers.add_parser(
+        "preflight", help="Check a benchmark baseline in an isolated worktree"
+    )
+    preflight_parser.add_argument("task_file")
+    preflight_parser.add_argument("--worktree-root")
+    preflight_parser.add_argument("--json", action="store_true")
     return parser
 
 
@@ -105,6 +125,26 @@ def main(
     bridge_factory: Callable[[], Bridge] = Bridge,
 ) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "benchmark":
+        try:
+            task = load_benchmark_task(args.task_file)
+            if args.benchmark_command == "validate":
+                payload = {"valid": True, "task": task.to_dict()}
+                exit_code = int(ExitCode.SUCCESS)
+            else:
+                result = preflight_task(task, worktree_root=args.worktree_root)
+                payload = result.to_dict()
+                exit_code = (
+                    int(ExitCode.SUCCESS)
+                    if result.valid
+                    else int(ExitCode.INVALID_INPUT)
+                )
+        except BenchmarkValidationError as error:
+            payload = {"valid": False, "error": str(error)}
+            exit_code = int(ExitCode.INVALID_INPUT)
+        _print_payload(payload, as_json=args.json)
+        return exit_code
+
     if args.command == "verify":
         repo = Path(args.repo).resolve()
         verification = AuditLog(
