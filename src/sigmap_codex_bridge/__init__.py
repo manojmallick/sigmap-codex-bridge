@@ -4,4 +4,4 @@ from .bridge import Bridge, BridgeResult, ExitCode
 
 __all__ = ["Bridge", "BridgeResult", "ExitCode", "__version__"]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
