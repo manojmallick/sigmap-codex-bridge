@@ -116,6 +116,19 @@ def preflight_task(
                     )
                 )
                 can_run_tests = setup.ok
+                if setup.ok:
+                    setup_changes = GitRepository(worktree).changes()
+                    setup_clean = not setup_changes
+                    checks.append(
+                        PreflightCheck(
+                            "setup_clean",
+                            setup_clean,
+                            "setup left no Git-visible changes"
+                            if setup_clean
+                            else "setup left Git-visible changes",
+                        )
+                    )
+                    can_run_tests = setup_clean
 
         if can_run_tests:
             commands = (task.test_command, *task.static_check_commands)

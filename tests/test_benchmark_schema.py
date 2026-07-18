@@ -12,6 +12,18 @@ from sigmap_codex_bridge.benchmark import (
 
 
 class BenchmarkSchemaTests(unittest.TestCase):
+    def test_published_json_schemas_parse(self) -> None:
+        schema_root = Path(__file__).resolve().parents[1] / "schemas"
+        names = (
+            "benchmark-task-v1.schema.json",
+            "benchmark-run-artifact-v1.schema.json",
+            "benchmark-report-v1.schema.json",
+        )
+        for name in names:
+            with self.subTest(name=name):
+                value = json.loads((schema_root / name).read_text(encoding="utf-8"))
+                self.assertEqual(value["$schema"], "https://json-schema.org/draft/2020-12/schema")
+
     def task_value(self) -> dict[str, object]:
         return {
             "schema_version": 1,

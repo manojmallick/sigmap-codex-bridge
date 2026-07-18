@@ -24,6 +24,13 @@ class SigMapContextProviderTests(unittest.TestCase):
         self.assertIn("validate_token", result.context)
         self.assertGreater(result.word_count, 0)
 
+    def test_reads_generated_query_context_instead_of_cli_summary(self) -> None:
+        result = self.provider("ready_file").retrieve("task", ROOT)
+
+        self.assertEqual(result.status, ContextStatus.READY)
+        self.assertIn("src/actual.py", result.context)
+        self.assertNotIn("query context written", result.context)
+
     def test_distinguishes_missing_index(self) -> None:
         result = self.provider("missing_index").retrieve("fix auth", ROOT)
 

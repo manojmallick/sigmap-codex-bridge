@@ -115,6 +115,30 @@ class PreflightTests(unittest.TestCase):
         self.assertFalse(test_failure.valid)
         self.assertIn("baseline_tests", [check.name for check in test_failure.checks])
 
+    def test_rejects_setup_that_changes_versioned_candidate_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            revision = initialize_repo(repo)
+            result = preflight_task(
+                self.task(
+                    repo,
+                    revision,
+                    setup=(
+                        sys.executable,
+                        "-c",
+                        "from pathlib import Path; Path('generated.txt').write_text('x')",
+                    ),
+                ),
+                worktree_root=root / "worktrees",
+            )
+
+        self.assertFalse(result.valid)
+        setup_clean = next(
+            check for check in result.checks if check.name == "setup_clean"
+        )
+        self.assertFalse(setup_clean.passed)
+
 
 if __name__ == "__main__":
     unittest.main()

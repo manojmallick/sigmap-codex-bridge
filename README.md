@@ -5,12 +5,11 @@ layer for measuring how ranked repository context affects Codex task outcomes.
 
 ## Current status
 
-This repository is implementing **v0.3.0**: an independent benchmark
-specification on top of isolated, traceable bridge runs. It validates versioned
-YAML/JSON tasks, rejects invalid or already-failing baselines in detached Git
-worktrees, and defines correctness and efficiency scorers that do not use
-retrieved context as ground truth. It does not yet contain measured benchmark
-results.
+This repository is implementing **v0.4.0**: a reproducible paired benchmark on
+top of isolated, traceable bridge runs. It alternates raw and SigMap condition
+order, pins each pair to one resolved commit and configuration, retains every
+attempt as a raw JSON artifact, and regenerates machine-readable and Markdown
+reports without using retrieved context as correctness ground truth.
 
 The hypothesis is:
 
@@ -87,6 +86,32 @@ sigmap-bridge benchmark preflight benchmarks/task.yaml --json
 Task commands are argument arrays, never shell strings. Preflight rejects dirty
 source repositories, missing revisions or executables, setup failures, and task
 tests that already fail at the declared revision.
+
+Run every declared repetition as a complete raw/SigMap pair. The first
+condition alternates per repetition to reduce order effects:
+
+```bash
+sigmap-bridge benchmark run benchmarks/tasks/*.yaml \
+  --experiment-id build-week-2026-07-18 \
+  --model MODEL_ID \
+  --codex-command /path/to/codex \
+  --context-timeout 120 \
+  --output-dir benchmark_runs \
+  --json
+```
+
+Regenerate byte-stable JSON and Markdown summaries from the retained artifacts:
+
+```bash
+sigmap-bridge benchmark report benchmark_runs --json
+```
+
+Each raw artifact records the resolved revision, pair and order identifiers,
+environment and exact command, context/Codex process outcomes, candidate tests,
+static checks, repository changes, independent score, cleanup result, and all
+failure details. Reports include condition success rates, median efficiency
+metrics, and every failed run. Ratios are `null` when the raw denominator is
+zero.
 
 Audit records contain the full SHA-256 digest of context, not raw context or
 task text. The local chain and checkpoint detect ordinary modification,

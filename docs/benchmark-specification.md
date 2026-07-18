@@ -49,6 +49,35 @@ The scorer accepts only the declared task contract and observable run outputs.
 It has no field for raw or SigMap-ranked context. Retrieval relevance may help
 explain a run, but it is never correctness ground truth.
 
+## Paired execution and retained evidence
+
+`sigmap-bridge benchmark run` preflights each task once, resolves its revision
+to a commit, and creates a new detached worktree for every condition. Each
+one-based repetition contains exactly one raw and one SigMap run. With the
+default raw starting condition, the orders are `raw, sigmap` for odd
+repetitions and `sigmap, raw` for even repetitions.
+
+Both members of a pair use the same resolved revision, prompt, setup and test
+commands, sandbox, timeout, and model setting. Candidate tests and static checks
+run inside the candidate worktree before its recoverable lease is cleaned.
+Context retrieval failure is retained as a failed SigMap attempt and never
+silently falls back to raw.
+
+Every attempted run is atomically written using the
+[`benchmark-run-artifact-v1`](../schemas/benchmark-run-artifact-v1.schema.json)
+contract. The artifact contains process stdout/stderr and provenance but the
+independent `score` object contains no context field. Interrupted experiments
+therefore retain all artifacts completed before the interruption rather than a
+selected best run.
+
+`sigmap-bridge benchmark report` reads only retained artifacts and writes a
+[`benchmark-report-v1`](../schemas/benchmark-report-v1.schema.json) JSON report
+plus a Markdown rendering. Inputs are sorted by experiment, task, repetition,
+and within-pair position, so identical inputs produce byte-identical reports.
+Success rates use all attempted runs. Efficiency metrics use medians, failures
+remain enumerated, and comparisons are `null` when their raw denominator is
+zero.
+
 ## Threats to validity
 
 - **Stochasticity:** model output varies. Preserve all repetitions and report
