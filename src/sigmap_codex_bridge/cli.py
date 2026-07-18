@@ -21,6 +21,7 @@ from .experiment import (
 from .git import GitError
 from .preflight import preflight_task
 from .reporting import ReportError, write_report
+from .submission import render_submission, validate_submission
 from .worktree import WorktreeError, WorktreeManager
 
 
@@ -47,6 +48,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Return a nonzero exit when live-run requirements are not ready",
     )
     doctor_parser.add_argument("--json", action="store_true")
+
+    submission_parser = subparsers.add_parser(
+        "submission", help="Validate Build Week submission metadata"
+    )
+    submission_subparsers = submission_parser.add_subparsers(
+        dest="submission_command", required=True
+    )
+    submission_validate = submission_subparsers.add_parser(
+        "validate", help="Check evidence consistency and external readiness"
+    )
+    submission_validate.add_argument(
+        "metadata_file", nargs="?", default="submission/build-week-2026.json"
+    )
+    submission_validate.add_argument("--require-ready", action="store_true")
+    submission_validate.add_argument("--json", action="store_true")
 
     run_parser = subparsers.add_parser("run", help="Run one bridge task")
     run_parser.add_argument("task", help="Task instruction passed to Codex")
@@ -219,6 +235,16 @@ def main(
         else:
             print(render_doctor(result))
         if args.require_live and not result.live_ready:
+            return int(ExitCode.INVALID_INPUT)
+        return int(ExitCode.SUCCESS)
+
+    if args.command == "submission":
+        result = validate_submission(args.metadata_file)
+        if args.json:
+            print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        else:
+            print(render_submission(result))
+        if not result.valid or (args.require_ready and not result.submission_ready):
             return int(ExitCode.INVALID_INPUT)
         return int(ExitCode.SUCCESS)
 

@@ -36,6 +36,7 @@ class PackageContractTests(unittest.TestCase):
         self.assertIn("run", completed.stdout)
         self.assertIn("demo", completed.stdout)
         self.assertIn("doctor", completed.stdout)
+        self.assertIn("submission", completed.stdout)
 
 
 if __name__ == "__main__":
