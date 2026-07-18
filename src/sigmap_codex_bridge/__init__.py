@@ -1,3 +1,7 @@
-"""SigMap Codex Bridge package metadata."""
+"""Contract-tested context bridge between SigMap and Codex."""
 
-__version__ = "0.0.0"
+from .bridge import Bridge, BridgeResult, ExitCode
+
+__all__ = ["Bridge", "BridgeResult", "ExitCode", "__version__"]
+
+__version__ = "0.1.0"
