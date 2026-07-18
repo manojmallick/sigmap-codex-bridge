@@ -11,6 +11,8 @@ from pathlib import Path
 from .audit import AuditLog
 from .benchmark import BenchmarkValidationError, load_benchmark_task
 from .bridge import Bridge, BridgeResult, ExitCode
+from .demo import DemoError, render_replay, replay_demo
+from .doctor import render_doctor, run_doctor
 from .experiment import (
     BenchmarkRunError,
     PairedBenchmarkRunner,
@@ -28,6 +30,24 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run Codex with explicit raw or SigMap-ranked context",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+    demo_parser = subparsers.add_parser(
+        "demo", help="Replay packaged measured results without live calls"
+    )
+    demo_parser.add_argument("--json", action="store_true")
+
+    doctor_parser = subparsers.add_parser(
+        "doctor", help="Diagnose local readiness for live bridge runs"
+    )
+    doctor_parser.add_argument("--repo", default=".", help="Target Git repository")
+    doctor_parser.add_argument("--codex-command", default="codex")
+    doctor_parser.add_argument("--sigmap-command", default="sigmap")
+    doctor_parser.add_argument(
+        "--require-live",
+        action="store_true",
+        help="Return a nonzero exit when live-run requirements are not ready",
+    )
+    doctor_parser.add_argument("--json", action="store_true")
+
     run_parser = subparsers.add_parser("run", help="Run one bridge task")
     run_parser.add_argument("task", help="Task instruction passed to Codex")
     run_parser.add_argument("--repo", default=".", help="Target Git repository")
@@ -170,6 +190,38 @@ def main(
     benchmark_runner_factory: Callable[[], PairedBenchmarkRunner] = PairedBenchmarkRunner,
 ) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "demo":
+        try:
+            payload = replay_demo()
+        except DemoError as error:
+            payload = {
+                "replay": True,
+                "live_calls": 0,
+                "valid": False,
+                "error": str(error),
+            }
+            _print_payload(payload, as_json=args.json)
+            return int(ExitCode.INVALID_INPUT)
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(render_replay(payload))
+        return int(ExitCode.SUCCESS)
+
+    if args.command == "doctor":
+        result = run_doctor(
+            args.repo,
+            codex_command=(args.codex_command,),
+            sigmap_command=(args.sigmap_command,),
+        )
+        if args.json:
+            print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        else:
+            print(render_doctor(result))
+        if args.require_live and not result.live_ready:
+            return int(ExitCode.INVALID_INPUT)
+        return int(ExitCode.SUCCESS)
+
     if args.command == "benchmark":
         if args.benchmark_command == "report":
             artifact_dir = Path(args.artifact_dir).resolve()

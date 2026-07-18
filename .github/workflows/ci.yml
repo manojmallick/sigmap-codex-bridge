@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test and build tools
+        run: python -m pip install --upgrade pip build ruff
+      - name: Install package
+        run: python -m pip install .
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Run Ruff
+        run: ruff check .
+      - name: Build distributions
+        run: python -m build
+      - name: Verify installed-wheel replay outside checkout
+        shell: bash
+        run: |
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          python -m venv "${RUNNER_TEMP}/sigmap-bridge-wheel"
+          "${RUNNER_TEMP}/sigmap-bridge-wheel/bin/python" -m pip install "$wheel"
+          cd "${RUNNER_TEMP}"
+          "${RUNNER_TEMP}/sigmap-bridge-wheel/bin/sigmap-bridge" demo --json > replay.json
+          "${RUNNER_TEMP}/sigmap-bridge-wheel/bin/python" - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("replay.json").read_text(encoding="utf-8"))
+          assert payload["mode"] == "replay"
+          assert payload["replay"] is True
+          assert payload["live_calls"] == 0
+          assert payload["credits_required"] is False
+          assert payload["report"]["artifact_count"] == 18
+          PY

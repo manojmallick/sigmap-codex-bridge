@@ -5,11 +5,10 @@ layer for measuring how ranked repository context affects Codex task outcomes.
 
 ## Current status
 
-This repository is implementing **v0.4.0**: a reproducible paired benchmark on
-top of isolated, traceable bridge runs. It alternates raw and SigMap condition
-order, pins each pair to one resolved commit and configuration, retains every
-attempt as a raw JSON artifact, and regenerates machine-readable and Markdown
-reports without using retrieved context as correctness ground truth.
+This repository is implementing **v0.5.0**: an installable, judge-ready CLI for
+the reproducible paired benchmark. A prominent zero-credit command replays the
+checked-in measured report entirely from verified wheel resources, while a
+separate doctor command diagnoses every prerequisite for a fresh live run.
 
 The hypothesis is:
 
@@ -45,17 +44,51 @@ the complete environment, command, limitations, and all raw artifacts.
   — initial Codex integration decision
 - [`docs/benchmark-specification.md`](docs/benchmark-specification.md) — task
   contract, metric definitions, and threats to validity
+- [`docs/judge-quickstart.md`](docs/judge-quickstart.md) — five-minute install,
+  zero-credit replay, and separate opt-in live path
+- [`docs/challenges-and-limitations.md`](docs/challenges-and-limitations.md) —
+  concrete failure diary and current scope limits
 
 ## Install
 
-Python 3.10 or newer and Git are required. PyYAML is installed with the package;
-Codex, Node.js, and SigMap are additionally required for a live bridge run.
+Supported live environments are macOS and Linux with CPython 3.10 through
+3.14. PyYAML is installed with the package; Git, Codex, and SigMap are
+additionally required only for a live bridge run.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install .
 ```
+
+## Zero-credit judge demo
+
+The fastest judge path is offline and consumes no model credits. It replays the
+measured report packaged in the installed wheel and labels itself as historical
+evidence, never as a fresh run:
+
+```bash
+cd /tmp
+sigmap-bridge demo
+sigmap-bridge demo --json
+```
+
+The packaged report is checksum-linked to the checked-in v0.4 result. The
+[five-minute judge quickstart](docs/judge-quickstart.md) gives the exact digest,
+provenance, expected output, and install-from-clean-checkout steps.
+
+Check whether a machine is ready for a genuinely live run without launching
+one:
+
+```bash
+sigmap-bridge doctor --repo ./your-repo
+sigmap-bridge doctor --repo ./your-repo --require-live --json
+```
+
+`doctor` distinguishes missing, broken, unauthenticated, dirty, stale, and
+unsupported states with an actionable fix. Live runs require external CLIs,
+network access, and may consume Codex/API credits; they are never part of the
+zero-credit replay.
 
 ## Run
 

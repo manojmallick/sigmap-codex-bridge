@@ -1,0 +1,12 @@
+{
+  "demo_schema_version": 1,
+  "mode": "replay",
+  "label": "ZERO-CREDIT REPLAY — no live Codex, SigMap, Git, or network calls",
+  "source_experiment_id": "build-week-2026-07-18",
+  "source_revision": "504e823853459fef0c66e0b02915b4fc59ec3151",
+  "source_report_commit": "d7c9877906af083ae0724e50175f859386a52e7b",
+  "source_report_path": "benchmarks/results/build-week-2026-07-18/report.json",
+  "report_sha256": "689698a2525cb77142a3aae33295ef6d7de18a6d0bb848c85546f70c61acf490",
+  "live_calls": 0,
+  "credits_required": false
+}
