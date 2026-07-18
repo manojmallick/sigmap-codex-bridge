@@ -10,7 +10,7 @@ prompt: >-
 expected_behavior: >-
   Automation can opt into a nonzero report exit for retained benchmark failures
   without losing generated evidence or changing default CLI behavior.
-test_command: [/usr/bin/env, PYTHONPATH=src:tests, python3, -m, unittest, discover, -s, tests]
+test_command: [/usr/bin/env, PYTHONPATH=src:tests, /opt/homebrew/bin/python3, -m, unittest, discover, -s, tests]
 static_check_commands:
   - [ruff, check, src, tests]
 allowed_files:

@@ -11,7 +11,7 @@ prompt: >-
 expected_behavior: >-
   Markdown reports render all three existing comparison ratios honestly and
   deterministically, including n/a for zero-denominator comparisons.
-test_command: [/usr/bin/env, PYTHONPATH=src:tests, python3, -m, unittest, discover, -s, tests]
+test_command: [/usr/bin/env, PYTHONPATH=src:tests, /opt/homebrew/bin/python3, -m, unittest, discover, -s, tests]
 static_check_commands:
   - [ruff, check, src, tests]
 allowed_files:
