@@ -73,9 +73,10 @@ Narration:
 sigmap-bridge submission validate submission/build-week-2026.json
 ```
 
-Show `codex_evidence: GPT-5.6 session ...` and `Build Week submission: READY`.
-Record only after the real public video URL has been entered; do not stage a
-fake READY result.
+Show `Metadata integrity: VALID`, the `codex_evidence: GPT-5.6 session ...`
+line, and the single expected video-URL warning. Explain that the recording
+must be uploaded before its real URL can be added. After upload, add that URL
+and rerun with `--require-ready`; do not stage a fake READY result in the video.
 
 ## 2:30–2:45 — Close
 
