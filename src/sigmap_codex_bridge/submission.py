@@ -71,6 +71,67 @@ def _release_version(value: object) -> tuple[int, int, int] | None:
     return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
 
+def _codex_evidence(
+    payload: Mapping[str, Any], repository_root: Path
+) -> tuple[bool, str]:
+    """Validate inspectable Codex/GPT provenance without trusting prose alone."""
+
+    evidence = _nested(payload, "evidence", "codex")
+    if not isinstance(evidence, Mapping):
+        return False, "missing evidence.codex object"
+
+    session_id = evidence.get("feedback_session_id")
+    external_session_id = _nested(payload, "external", "feedback_session_id")
+    session_ok = (
+        isinstance(session_id, str)
+        and re.fullmatch(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            session_id,
+            re.IGNORECASE,
+        )
+        is not None
+        and session_id == external_session_id
+    )
+    model_ok = str(evidence.get("model", "")).strip().lower() == "gpt-5.6"
+    contribution = evidence.get("contribution")
+    contribution_ok = isinstance(contribution, str) and len(contribution.strip()) >= 20
+    command = evidence.get("verification_command")
+    command_ok = (
+        isinstance(command, list)
+        and bool(command)
+        and all(isinstance(item, str) and item.strip() for item in command)
+    )
+
+    changed_files = evidence.get("changed_files")
+    files_ok = isinstance(changed_files, list) and bool(changed_files)
+    if files_ok:
+        for value in changed_files:
+            if not isinstance(value, str) or not value or Path(value).is_absolute():
+                files_ok = False
+                break
+            candidate = (repository_root / value).resolve()
+            try:
+                candidate.relative_to(repository_root)
+            except ValueError:
+                files_ok = False
+                break
+            if not candidate.is_file():
+                files_ok = False
+                break
+
+    states = {
+        "session": session_ok,
+        "model": model_ok,
+        "contribution": contribution_ok,
+        "verification_command": command_ok,
+        "changed_files": files_ok,
+    }
+    failed = [name for name, ok in states.items() if not ok]
+    if failed:
+        return False, f"invalid fields: {', '.join(failed)}"
+    return True, f"GPT-5.6 session {session_id}; {len(changed_files)} changed files"
+
+
 def validate_submission(path: str | Path) -> SubmissionResult:
     """Validate evidence consistency and report separate external blockers."""
 
@@ -121,6 +182,19 @@ def validate_submission(path: str | Path) -> SubmissionResult:
     )
 
     repository_root = metadata_path.parent.parent
+    codex_ok, codex_detail = _codex_evidence(payload, repository_root)
+    checks.append(
+        SubmissionCheck(
+            "codex_evidence",
+            "ok" if codex_ok else "fail",
+            codex_detail,
+            (
+                None
+                if codex_ok
+                else "Add matching GPT-5.6 session, contribution, command array, and repository-local changed files."
+            ),
+        )
+    )
     report_value = _nested(payload, "evidence", "report_path")
     report_path: Path | None = None
     if isinstance(report_value, str) and report_value and not Path(report_value).is_absolute():

@@ -26,10 +26,15 @@ class SubmissionCandidateTests(unittest.TestCase):
         report_path.write_bytes(REPORT.read_bytes())
         payload = json.loads(METADATA.read_text(encoding="utf-8"))
         payload["evidence"]["report_path"] = "report.json"
+        payload["evidence"]["codex"]["changed_files"] = [
+            "submission/candidate.json"
+        ]
         if ready:
             payload["release"]["status"] = "ready"
             payload["external"] = {
-                "feedback_session_id": "session-verified-by-feedback",
+                "feedback_session_id": payload["evidence"]["codex"][
+                    "feedback_session_id"
+                ],
                 "video_url": "https://youtu.be/example",
                 "devpost_url": "https://devpost.com/software/sigmap-codex-bridge",
             }
@@ -45,7 +50,8 @@ class SubmissionCandidateTests(unittest.TestCase):
         self.assertEqual(check(result, "report_sha256").status, "ok")
         self.assertEqual(check(result, "measured_results").status, "ok")
         self.assertEqual(check(result, "experiment_id").status, "ok")
-        self.assertEqual(check(result, "feedback_session_id").status, "warn")
+        self.assertEqual(check(result, "codex_evidence").status, "ok")
+        self.assertEqual(check(result, "feedback_session_id").status, "ok")
         self.assertEqual(check(result, "release_status").status, "ok")
 
     def test_complete_real_values_make_candidate_ready(self) -> None:
@@ -54,6 +60,33 @@ class SubmissionCandidateTests(unittest.TestCase):
 
         self.assertTrue(result.valid)
         self.assertTrue(result.submission_ready)
+
+    def test_codex_evidence_requires_matching_uuid_model_command_and_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self.fixture(root, ready=True)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["evidence"]["codex"]["model"] = "another-model"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            wrong_model = validate_submission(path)
+            payload["evidence"]["codex"]["model"] = "GPT-5.6"
+            payload["evidence"]["codex"]["feedback_session_id"] = "not-a-session"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            wrong_session = validate_submission(path)
+            payload["evidence"]["codex"]["feedback_session_id"] = payload[
+                "external"
+            ]["feedback_session_id"]
+            payload["evidence"]["codex"]["verification_command"] = "pytest"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            unsafe_command = validate_submission(path)
+            payload["evidence"]["codex"]["verification_command"] = ["python", "-m", "unittest"]
+            payload["evidence"]["codex"]["changed_files"] = ["../outside.py"]
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            escaped_file = validate_submission(path)
+
+        for result in (wrong_model, wrong_session, unsafe_command, escaped_file):
+            self.assertFalse(result.valid)
+            self.assertEqual(check(result, "codex_evidence").status, "fail")
 
     def test_future_or_malformed_candidate_version_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -135,8 +168,8 @@ class SubmissionCandidateTests(unittest.TestCase):
         self.assertGreaterEqual(architecture.count("```mermaid"), 3)
         self.assertIn("Independent scorer", architecture)
         self.assertIn("Bridge Audit Log", architecture)
-        self.assertIn("2:40 target", demo)
-        self.assertIn("## 2:30–2:40 — Close", demo)
+        self.assertIn("2:45 target", demo)
+        self.assertIn("## 2:30–2:45 — Close", demo)
 
 
 if __name__ == "__main__":

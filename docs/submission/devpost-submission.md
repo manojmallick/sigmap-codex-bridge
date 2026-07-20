@@ -55,6 +55,24 @@ authentication, Apple Python 3.9 was replaced with a supported interpreter,
 SigMap context delivery was corrected to read the generated payload, and
 worktree cleanup stayed scoped after a sandbox permission failure.
 
-The primary `/feedback` session ID, video URL, and Devpost URL must be copied
-from `submission/build-week-2026.json` only after real values are entered. Do
-not publish this copy while the validator reports `BLOCKED`.
+## How GPT-5.6 was used
+
+In Codex session `019f75cb-5dfc-7f03-a9c1-94f86dd92c8c`, GPT-5.6 added a
+fail-closed provenance check to the submission validator. The validator now
+cross-checks the `/feedback` UUID, requires the `GPT-5.6` model label, preserves
+a precise contribution statement and safe argument-array verification command,
+and rejects missing or repository-escaping changed-file paths. Contract tests
+cover each rejection path. The same session produced the synchronized README,
+Devpost copy, and sub-three-minute demo plan.
+
+## Judge testing instructions
+
+Supported platforms are macOS and Linux with CPython 3.10 through 3.14. From a
+clean checkout, run `python -m pip install .`, then `sigmap-bridge demo`. The
+demo is a checksum-verified, zero-credit replay that requires no Codex or SigMap
+authentication, model credits, test account, or network access. Run
+`sigmap-bridge submission validate submission/build-week-2026.json` to inspect
+the evidence and GPT-5.6 provenance checks.
+
+The public video URL must still be entered before final submission. Do not call
+the candidate ready while the validator reports `BLOCKED`.

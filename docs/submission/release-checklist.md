@@ -22,14 +22,14 @@ commit, and the user explicitly requests release.
 
 ## External gates — currently blocking
 
-- [ ] Run `/feedback` in the primary Codex collaboration session and enter the
+- [x] Run `/feedback` in the primary Codex collaboration session and enter the
   returned ID as `external.feedback_session_id`.
 - [ ] Record the demo at no more than 2:50 and show the result in the first 15
   seconds.
-- [ ] Verify the recorded audit command uses a genuine live-session audit path.
 - [ ] Watch the recording as a new judge; check legibility and remove secrets.
 - [ ] Upload the video publicly or unlisted and enter its HTTPS URL.
-- [ ] Register/finalize the Developer Tools project and enter its Devpost URL.
+- [x] Populate the Devpost project and enter its public project URL.
+- [ ] Finalize the submission form in the Developer Tools category.
 - [ ] Run `sigmap-bridge submission validate submission/build-week-2026.json
   --require-ready` and require exit code 0.
 - [ ] Confirm README, video, Devpost copy, and report still show identical

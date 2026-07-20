@@ -15,6 +15,27 @@
     "internal_buffer_deadline": "2026-07-21T05:00:00-07:00"
   },
   "evidence": {
+    "codex": {
+      "feedback_session_id": "019f75cb-5dfc-7f03-a9c1-94f86dd92c8c",
+      "model": "GPT-5.6",
+      "contribution": "Added fail-closed, structured Codex provenance validation and judge-facing documentation for the Build Week submission.",
+      "verification_command": [
+        "python",
+        "-m",
+        "unittest",
+        "tests.test_submission"
+      ],
+      "changed_files": [
+        ".github/copilot-instructions.md",
+        "src/sigmap_codex_bridge/submission.py",
+        "tests/test_submission.py",
+        "submission/build-week-2026.json",
+        "README.md",
+        "docs/submission/devpost-submission.md",
+        "docs/submission/demo-script.md",
+        "docs/submission/release-checklist.md"
+      ]
+    },
     "experiment_id": "build-week-2026-07-18",
     "source_revision": "504e823853459fef0c66e0b02915b4fc59ec3151",
     "report_commit": "d7c9877906af083ae0724e50175f859386a52e7b",
@@ -39,8 +60,8 @@
     "supported": "macOS and Linux; CPython 3.10 through 3.14"
   },
   "external": {
-    "feedback_session_id": null,
+    "feedback_session_id": "019f75cb-5dfc-7f03-a9c1-94f86dd92c8c",
     "video_url": null,
-    "devpost_url": null
+    "devpost_url": "https://devpost.com/software/sigmap-codex-bridge"
   }
 }

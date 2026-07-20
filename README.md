@@ -23,6 +23,7 @@ cross-platform Python CI matrix.
 - [Architecture](#architecture)
 - [How it works](#how-it-works)
 - [Quick Start](#quick-start)
+- [Built with Codex and GPT-5.6](#built-with-codex-and-gpt-56)
 - [Configuration](#configuration)
 - [Project Structure](#project-structure)
 - [Privacy and data handling](#privacy-and-data-handling)
@@ -236,6 +237,44 @@ sigmap-bridge benchmark pack validate \
 See the [independent replication guide](docs/independent-replication.md) before
 running or publishing pack evidence.
 
+### Measured Build Week result
+
+| Condition | Passed checks | Median runtime | Median total input |
+|---|---:|---:|---:|
+| Raw | 9/9 | 249.089 seconds | 766,538 tokens |
+| SigMap | 9/9 | 186.590 seconds | 562,358 tokens |
+
+These values come from 18 retained historical attempts in the checked-in
+2026-07-18 report. They describe this three-task experiment only. Run
+`sigmap-bridge demo` for the checksum-verified zero-credit replay; use a fresh,
+predeclared paired benchmark before drawing conclusions about another project.
+
+## Built with Codex and GPT-5.6
+
+| Requirement | What happened in this project |
+|---|---|
+| How Codex was used | Codex helped implement the bridge, strict schemas, isolated Git worktrees, independent scoring, paired analysis, resumable execution, tests, release documentation, and judge workflow. It also ran targeted tests and packaging checks after changes. |
+| Where Codex accelerated the work | Repository context ranking identified the submission validator and its contract tests without a broad source read. Codex then kept the validator, machine-readable metadata, README, Devpost copy, and demo script synchronized in one bounded change. |
+| Important decisions | Raw and SigMap conditions share a pinned revision; missing SigMap context fails closed; correctness comes from tests and observable outputs rather than retrieved context; every attempted run is retained; historical replay is labeled zero-credit rather than presented as a fresh benchmark. |
+| Precise GPT-5.6 contribution | In Codex session `019f75cb-5dfc-7f03-a9c1-94f86dd92c8c`, GPT-5.6 added structured submission-provenance validation. It checks the model label, matching `/feedback` UUID, concrete contribution text, safe verification-command array, and repository-local changed files. It also produced the judge-facing documentation and video plan for that contribution. |
+| Verifiable evidence | [`submission/build-week-2026.json`](submission/build-week-2026.json) records the session and verification command. [`tests/test_submission.py`](tests/test_submission.py) covers mismatched models and sessions, unsafe command strings, and escaped file paths. The `/feedback` session remains the authoritative record of the interaction. |
+
+### Judge path—no live credits and no project rebuild
+
+From a clean checkout, install the CLI once and replay the packaged evidence:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install .
+sigmap-bridge demo
+sigmap-bridge submission validate submission/build-week-2026.json
+```
+
+The demo makes no Codex, SigMap, Git, or network calls. It verifies the packaged
+report checksum and replays the retained historical result. A live benchmark is
+optional and is never required for judging this submission.
+
 ## Configuration
 
 The package reads **no project-specific environment variables**. Child
@@ -324,7 +363,7 @@ Codex and SigMap data policies and your organization permit it.
 | Packaged demo | Historical, checksum-linked replay of the checked-in 2026-07-18 report. It is not a fresh benchmark and receives no live benchmark credit. |
 | Measured evidence | Raw artifacts and deterministic reports are checked in under [`benchmarks/results/build-week-2026-07-18/`](benchmarks/results/build-week-2026-07-18/). Inspect or regenerate them; do not generalize one small experiment into a model-quality claim. |
 | Independent replication | A hash-locked PyPA `sampleproject` pack is included, but it intentionally contains no live result and PyPA does not endorse this project. |
-| Submission | Repository evidence validates internally. `/feedback`, video, and Devpost values remain external blockers in [`submission/build-week-2026.json`](submission/build-week-2026.json). |
+| Submission | Repository and structured GPT-5.6 evidence validate internally. The public video remains the external blocker in [`submission/build-week-2026.json`](submission/build-week-2026.json). |
 | Security boundary | Worktree leases, hashes, and atomic checkpoints detect ordinary failures or mutation. They are not sandbox replacements, signatures, distributed locks, or defenses against an actor who can rewrite all local state. |
 
 This project measures; it does not promise that SigMap will improve every task.
