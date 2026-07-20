@@ -1,292 +1,348 @@
 # SigMap Codex Bridge
 
-SigMap Codex Bridge is a reproducible A/B evaluation and evidence layer for
-measuring how ranked repository context affects Codex task outcomes. Built for
-OpenAI Build Week 2026.
+**Measure whether ranked repository context changes Codex outcomes—with isolated raw-vs-SigMap runs and retained, auditable evidence.**
 
-## Current status
+[![License](https://img.shields.io/github/license/manojmallick/sigmap-codex-bridge)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10--3.14-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![CI](https://img.shields.io/github/actions/workflow/status/manojmallick/sigmap-codex-bridge/ci.yml?branch=main&label=ci)](.github/workflows/ci.yml)
+[![PyYAML](https://img.shields.io/badge/config-PyYAML-CC0000?logo=yaml&logoColor=white)](pyproject.toml)
+[![Codex CLI](https://img.shields.io/badge/runtime-Codex%20CLI-111111?logo=openai&logoColor=white)](src/sigmap_codex_bridge/codex.py)
+[![OpenAI Build Week 2026](https://img.shields.io/badge/context-OpenAI%20Build%20Week%202026-412991)](submission/build-week-2026.json)
 
-The **v0.9.0** development line adds atomic resumable execution, pair-aware
-concurrency, and explicit runtime/token/pair budgets while preserving the frozen
-v0.6.0 Build Week candidate. The final submission remains
-explicitly blocked until real `/feedback`, video, and Devpost values replace
-the null fields in submission metadata; no post-v0.6 work changes that evidence.
+Repository-context tools are easy to demo and hard to evaluate: model output is
+stochastic, execution environments drift, and favorable runs are easy to
+over-select. SigMap Codex Bridge runs Codex with and without SigMap-ranked
+context from the same pinned revision, then scores observable outcomes and
+retains the evidence. Manoj Mallick built it for OpenAI Build Week 2026 with
+strict schemas, recoverable Git isolation, deterministic reports, and a
+cross-platform Python CI matrix.
 
-The hypothesis is:
+## Table of Contents
 
-> Relevant repository context should improve task success or reduce the work
-> Codex needs to reach a correct result.
+- [Why SigMap Codex Bridge](#why-sigmap-codex-bridge)
+- [Architecture](#architecture)
+- [How it works](#how-it-works)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Privacy and data handling](#privacy-and-data-handling)
+- [Honest Status](#honest-status)
+- [Roadmap](#roadmap)
+- [License](#license)
 
-A fresh paired run on 2026-07-18 retained all 18 attempts: both conditions
-passed 9/9 candidate regression/static checks. Across all runs, median runtime
-was 249.089 seconds raw versus 186.590 seconds with SigMap; median total input
-was 766,538 versus 562,358 tokens. These are small-sample maintenance-task
-results, not a general model-quality claim, and one task used more input with
-SigMap.
+## Why SigMap Codex Bridge
 
-| Task | Raw success | SigMap success | Median runtime raw / SigMap (s) | Median input raw / SigMap |
-|---|---:|---:|---:|---:|
-| Artifact run status | 3/3 | 3/3 | 228.288 / 216.274 | 534,456 / 606,285 |
-| Markdown comparisons | 3/3 | 3/3 | 249.089 / 141.404 | 766,538 / 402,740 |
-| Report failure exit | 3/3 | 3/3 | 266.106 / 183.294 | 937,367 / 509,165 |
-| **Overall per-run median** | **9/9** | **9/9** | **249.089 / 186.590** | **766,538 / 562,358** |
+| Evaluation pain | Project response |
+|---|---|
+| A successful patch does not prove that retrieved context helped. | Run explicit `raw` and `sigmap` conditions and compare complete pairs. |
+| Different revisions or dirty working trees invalidate comparisons. | Resolve one commit, reject dirty benchmark sources, and execute in detached leased worktrees. |
+| A retrieval failure can be mistaken for a grounded run. | Fail closed when SigMap was requested but no ready context is available. |
+| Model self-assessment is not an independent correctness signal. | Run declared candidate tests and static checks; score repository changes and process metrics separately from retrieved context. |
+| Interrupted or expensive experiments lose evidence. | Atomically checkpoint execution, reconcile retained artifacts, resume without overwriting completed attempts, and stop at pair boundaries. |
+| Aggregate results can hide failures or incompatible environments. | Retain failed attempts, exclude incomplete pairs from aggregates, and stratify comparisons by task, model, Codex command, platform, and pack provenance. |
+| A benchmark is difficult to reproduce elsewhere. | Validate, export, preflight, run, seal, and verify hash-locked replication packs. |
 
-The checked-in [report](benchmarks/results/build-week-2026-07-18/report.md),
-[machine-readable aggregate](benchmarks/results/build-week-2026-07-18/report.json),
-and [methodology](benchmarks/results/build-week-2026-07-18/README.md) contain
-the complete environment, command, limitations, and all raw artifacts.
+## Architecture
 
-The retained artifacts also contain 18 unique Codex thread IDs, nine raw runs
-with context disabled, nine SigMap runs with context ready, and 18 worktrees
-reported cleaned. The [measured-results and Codex narrative](docs/submission/measured-results-and-codex.md)
-ties those counts to dated commits and preserves the exact integration failures
-that changed the implementation.
+```mermaid
+flowchart TD
+    subgraph Inputs["📥 Inputs"]
+        O["One-off task + Git repository"]
+        T["Versioned YAML/JSON benchmark task"]
+        P["Optional replication pack"]
+    end
 
-## Project documents
+    subgraph Validation["🧭 Validation and planning"]
+        GI["Inspect Git HEAD and dirty state"]
+        TV["Strict task/schema validation"]
+        PV["Pack hash, revision, license, and path validation"]
+        PF["Preflight clean source, pinned revision, commands, and baseline tests"]
+        RS["Pair scheduler, resume state, concurrency, and budgets"]
+    end
 
-- [`SIGMAP_CODEX_BRIDGE_PLAN.md`](SIGMAP_CODEX_BRIDGE_PLAN.md) — original
-  pre-implementation planning artifact
-- [`VERSIONED_COMMIT_PLAN.md`](VERSIONED_COMMIT_PLAN.md) — staged delivery and
-  acceptance plan
-- [`docs/adr/0001-codex-context-injection.md`](docs/adr/0001-codex-context-injection.md)
-  — initial Codex integration decision
-- [`docs/benchmark-specification.md`](docs/benchmark-specification.md) — task
-  contract, metric definitions, and threats to validity
-- [`docs/independent-replication.md`](docs/independent-replication.md) — portable
-  pack lifecycle, independent run procedure, integrity checks, and non-claims
-- [`docs/paired-analysis-and-gates.md`](docs/paired-analysis-and-gates.md) —
-  paired deltas, uncertainty boundary, compatibility strata, and CI policies
-- [`docs/resumable-execution.md`](docs/resumable-execution.md) — atomic state,
-  safe resume, pair-aware concurrency, budgets, diagnosis, and recovery
-- [`docs/judge-quickstart.md`](docs/judge-quickstart.md) — five-minute install,
-  zero-credit replay, and separate opt-in live path
-- [`docs/challenges-and-limitations.md`](docs/challenges-and-limitations.md) —
-  concrete failure diary and current scope limits
-- [`docs/submission/architecture.md`](docs/submission/architecture.md) — bridge,
-  paired benchmark, and evidence-boundary diagrams
-- [`docs/submission/demo-script.md`](docs/submission/demo-script.md) — timed
-  2:40 recording script that opens on the measured result
-- [`docs/submission/devpost-submission.md`](docs/submission/devpost-submission.md)
-  — aligned Build Week submission copy
-- [`docs/submission/release-checklist.md`](docs/submission/release-checklist.md) —
-  repository and external release gates
-- [`submission/build-week-2026.json`](submission/build-week-2026.json) —
-  machine-readable evidence, judge commands, deadline, and readiness status
+    subgraph OneOff["⚡ One-off bridge flow"]
+        OCD{"Context condition?"}
+        OSM["SigMap ask on source repository"]
+        OREADY{"Context ready?"}
+        OWT["Detached Git worktree + exact lease"]
+        OCX["Codex exec --json"]
+        OCHECK["Git diff + scoped cleanup"]
+        OFAIL["Fail closed before Codex"]
+    end
 
-## Install
+    subgraph Benchmark["🧪 Paired benchmark flow"]
+        BWT["Per-attempt detached worktree + exact lease"]
+        BCD{"Context condition?"}
+        BRAW["Raw: no context supplied"]
+        BSM["SigMap ask inside attempt worktree"]
+        BREADY{"Context ready?"}
+        BCX["Codex exec --json"]
+        BFAIL["Retain failed attempt"]
+        BCHECK["Candidate tests + static checks + Git diff"]
+        BCLEAN["Scoped worktree cleanup"]
+    end
 
-Supported live environments are macOS and Linux with CPython 3.10 through
-3.14. PyYAML is installed with the package; Git, Codex, and SigMap are
-additionally required only for a live bridge run.
+    subgraph Evidence["📦 Evidence and decisions"]
+        BR["Bridge result + audit record when Codex ran"]
+        AR["Atomic run-artifact-v1 JSON"]
+        REPORT["Deterministic JSON + Markdown report"]
+        COMPARE["Compatibility-aware comparison"]
+        GATE{"Declared regression policy passes?"}
+        EXIT["Stable CLI exit code"]
+    end
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install .
+    O --> GI --> OCD
+    T --> TV --> PF --> RS
+    P --> PV --> TV
+    OCD -->|raw| OWT
+    OCD -->|sigmap| OSM --> OREADY
+    OREADY -->|yes| OWT
+    OREADY -->|no| OFAIL --> BR
+    OWT --> OCX --> OCHECK --> BR --> EXIT
+    RS --> BWT --> BCD
+    BCD -->|raw| BRAW --> BCX
+    BCD -->|sigmap| BSM --> BREADY
+    BREADY -->|yes| BCX
+    BREADY -->|no| BFAIL
+    BCX --> BCHECK --> BCLEAN
+    BFAIL --> BCLEAN
+    BCLEAN --> AR --> REPORT --> COMPARE --> GATE --> EXIT
 ```
 
-## Zero-credit judge demo
+The diagram shows both shipped execution paths. A one-off `run` retrieves
+SigMap context before creating its worktree. A benchmark attempt retrieves
+context inside its own worktree after preflight and scheduling.
 
-The fastest judge path is offline and consumes no model credits. It replays the
-measured report packaged in the installed wheel and labels itself as historical
-evidence, never as a fresh run:
+## How it works
+
+1. **Validate the input.** A one-off run checks the task and Git repository.
+   Benchmark tasks reject unknown fields, unsupported schema versions, shell
+   command strings, invalid timeouts, and invalid repetitions. Packs add pinned
+   repository, license, task-digest, platform, and path checks.
+2. **Prove the baseline.** Benchmark preflight requires a clean source, resolves
+   the requested commit, creates a disposable detached worktree, checks command
+   availability, and requires the unchanged test baseline to pass.
+3. **Isolate each attempt.** `WorktreeManager` creates one exact, recoverable
+   lease per run. Candidate changes never land in the source checkout.
+4. **Choose the condition.** Raw attempts send no context. SigMap attempts run
+   `sigmap ask <task> --top 8 --no-squeeze`; missing, empty, timed-out, or failed
+   retrieval does not silently fall back to raw.
+5. **Run and observe Codex.** `CodexRunner` executes `codex exec --json` with the
+   selected sandbox, parses JSONL events, and records status, thread ID, file
+   changes, usage, tool events, command events, stdout, stderr, and duration.
+6. **Score independently.** Declared tests and static checks run in the candidate
+   worktree. Scoring uses their results plus observable files, patch size,
+   runtime, tokens, and event counts. Retrieved context is not a scoring input.
+7. **Retain and analyze evidence.** Each attempted benchmark run becomes an
+   atomic schema-v1 artifact. Reports are byte-stable for identical inputs,
+   preserve failures, analyze complete pairs, and mark small samples as
+   insufficient evidence instead of manufacturing certainty.
+8. **Resume or replicate when needed.** An opt-in state file supports bounded
+   pair concurrency, pair/runtime/token limits, crash reconciliation, exact
+   lease diagnosis, and safe resume. Replication packs can be exported, sealed,
+   transferred, and verified without silently mixing original and replication
+   evidence.
+
+## Quick Start
+
+### Prerequisites
+
+| Path | Requirements |
+|---|---|
+| Offline replay and report inspection | macOS or Linux; CPython 3.10–3.14; Git |
+| Live one-off run | Offline requirements plus working, authenticated `codex` and indexed `sigmap` CLIs |
+| Live benchmark | Live requirements plus commands declared by the selected task |
+
+### Install and run the zero-credit replay
 
 ```bash
-cd /tmp
+git clone https://github.com/manojmallick/sigmap-codex-bridge.git
+cd sigmap-codex-bridge
+
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install .
+
 sigmap-bridge demo
 sigmap-bridge demo --json
 ```
 
-The packaged report is checksum-linked to the checked-in v0.4 result. The
-[five-minute judge quickstart](docs/judge-quickstart.md) gives the exact digest,
-provenance, expected output, and install-from-clean-checkout steps.
+`demo` verifies and replays the report packaged in the wheel. It makes no live
+Codex, SigMap, Git, or network calls and requires no model credits.
 
-Check whether a machine is ready for a genuinely live run without launching
-one:
+### Check live readiness
 
 ```bash
-sigmap-bridge doctor --repo ./your-repo
-sigmap-bridge doctor --repo ./your-repo --require-live --json
+sigmap-bridge doctor --repo .
+sigmap-bridge doctor --repo . --require-live --json
 ```
 
-`doctor` distinguishes missing, broken, unauthenticated, dirty, stale, and
-unsupported states with an actionable fix. Live runs require external CLIs,
-network access, and may consume Codex/API credits; they are never part of the
-zero-credit replay.
+`doctor` checks the supported OS/Python range, Git repository, source state,
+Codex executable and authentication, and SigMap executable and index.
 
-Validate that every published number still matches the frozen report and see
-which external Build Week fields remain:
+### Run one isolated task
 
-```bash
-sigmap-bridge submission validate submission/build-week-2026.json
-sigmap-bridge submission validate submission/build-week-2026.json --require-ready
-```
-
-The first command succeeds when repository evidence is internally consistent.
-The second deliberately exits nonzero until the real `/feedback` session ID,
-video URL, and Devpost URL are present and the metadata status is `ready`.
-
-## Run
-
-Run with SigMap context (the default):
+This is an opt-in live command and may consume model credits:
 
 ```bash
-sigmap-bridge run "Fix the JWT validation bug" --repo ./your-repo --json
-```
-
-Run the explicit raw condition:
-
-```bash
-sigmap-bridge run "Fix the JWT validation bug" --repo ./your-repo --no-sigmap --json
-```
-
-The bridge fails closed when SigMap was requested but its index is unavailable;
-it never silently runs the raw condition as a grounded success.
-
-Every normal run is pinned to the source repository's `HEAD` in a dedicated
-worktree. Uncommitted source changes are recorded as a dirty precondition but
-are not copied into the run. Successful cleanup removes only the bridge-owned,
-Git-recognized worktree lease.
-
-Verify the audit chain and its atomic head checkpoint:
-
-```bash
-sigmap-bridge verify --repo ./your-repo --json
-```
-
-Recover one worktree left by an interrupted process:
-
-```bash
-sigmap-bridge cleanup <run-id> --repo ./your-repo --json
-```
-
-Validate a versioned benchmark task, then check its clean baseline in an
-isolated worktree:
-
-```bash
-sigmap-bridge benchmark validate benchmarks/task.yaml --json
-sigmap-bridge benchmark preflight benchmarks/task.yaml --json
-```
-
-Task commands are argument arrays, never shell strings. Preflight rejects dirty
-source repositories, missing revisions or executables, setup failures, and task
-tests that already fail at the declared revision.
-
-Run every declared repetition as a complete raw/SigMap pair. The first
-condition alternates per repetition to reduce order effects:
-
-```bash
-sigmap-bridge benchmark run benchmarks/tasks/*.yaml \
-  --experiment-id build-week-2026-07-18 \
-  --model MODEL_ID \
-  --codex-command /path/to/codex \
-  --context-timeout 120 \
-  --output-dir benchmark_runs \
+sigmap-bridge run \
+  "Fix the JWT validation bug and run the relevant tests" \
+  --repo /absolute/path/to/target-repository \
+  --sandbox workspace-write \
   --json
 ```
 
-Opt into resumable execution with a dedicated state file. Work can run across
-pairs concurrently, but the two conditions of each pair remain sequential:
+Use `--no-sigmap` for the explicit raw condition. The default is the SigMap
+condition.
+
+### Validate and regenerate benchmark evidence
+
+These commands use checked-in inputs and make no Codex or SigMap calls:
 
 ```bash
-sigmap-bridge benchmark run benchmarks/tasks/*.yaml \
-  --experiment-id build-week-resumable \
-  --output-dir benchmark_runs \
-  --state-file benchmark-state.json \
+sigmap-bridge benchmark validate benchmarks/tasks/artifact-run-status.yaml --json
+
+sigmap-bridge benchmark report \
+  benchmarks/results/build-week-2026-07-18/artifacts \
+  --json-output /tmp/sigmap-report.json \
+  --markdown-output /tmp/sigmap-report.md \
+  --json
+```
+
+The checked-in task files reproduce the historical experiment environment and
+may reference tools or interpreter paths not present on another machine. Use
+`benchmark preflight` before a live run, or author a task for the target
+environment from [`schemas/benchmark-task-v1.schema.json`](schemas/benchmark-task-v1.schema.json).
+
+A fresh paired execution is opt-in and may consume model credits:
+
+```bash
+sigmap-bridge benchmark run /absolute/path/to/task.yaml \
+  --experiment-id local-YYYYMMDD \
+  --output-dir /tmp/sigmap-benchmark-runs \
+  --state-file /tmp/sigmap-benchmark-state.json \
   --max-workers 2 \
-  --max-pairs 10 \
-  --max-total-tokens 500000 \
+  --max-pairs 3 \
   --json
-
-sigmap-bridge benchmark run benchmarks/tasks/*.yaml \
-  --experiment-id build-week-resumable \
-  --output-dir benchmark_runs \
-  --state-file benchmark-state.json \
-  --resume --max-workers 2 --max-pairs 20 --json
 ```
 
-Budgets stop only at pair boundaries; already-running pairs can overshoot
-runtime or token limits, and the state records that overshoot without claiming
-a monetary-cost estimate. See the [resumable execution guide](docs/resumable-execution.md).
-
-Regenerate byte-stable JSON and Markdown summaries from the retained artifacts:
-
-```bash
-sigmap-bridge benchmark report benchmark_runs --json
-```
-
-Reports include within-pair runtime, input-token, and output-token deltas,
-direction counts, median/MAD effects, and a deterministic paired-bootstrap
-interval only with at least 10 comparable pairs. Smaller samples explicitly say
-`insufficient_evidence`.
-
-Compare compatible experiments across revisions, then apply only thresholds
-declared in a strict policy:
-
-```bash
-sigmap-bridge benchmark compare baseline_runs candidate_runs \
-  --output comparison.json --json
-sigmap-bridge benchmark gate candidate_runs benchmark-policy.yaml \
-  --output gate-result.json --json
-```
-
-Comparison rejects task, model, Codex-command, platform, or benchmark-pack
-mismatches unless `--allow-incompatible` records the override and every
-mismatched stratum. Gate failures return exit code `50`; invalid inputs return
-`2`. See the [paired analysis and gates guide](docs/paired-analysis-and-gates.md)
-for formulas, policy fields, interpretation rules, and non-claims.
-
-Each raw artifact records the resolved revision, pair and order identifiers,
-environment and exact command, context/Codex process outcomes, candidate tests,
-static checks, repository changes, independent score, cleanup result, and all
-failure details. Reports include condition success rates, median efficiency
-metrics, and every failed run. Ratios are `null` when the raw denominator is
-zero.
-
-Validate, export, and preflight the pinned public-repository replication pack
-without launching Codex or consuming model credits:
+For a no-credit integrity path, validate the bundled replication pack:
 
 ```bash
 sigmap-bridge benchmark pack validate \
   benchmark_packs/pypa-sampleproject-v1/pack.yaml --json
-sigmap-bridge benchmark pack export \
-  benchmark_packs/pypa-sampleproject-v1/pack.yaml \
-  /tmp/pypa-sampleproject-v1.tar.gz --json
-sigmap-bridge benchmark pack preflight \
-  benchmark_packs/pypa-sampleproject-v1/pack.yaml --json
 ```
 
-The [independent replication guide](docs/independent-replication.md) separates
-those zero-credit integrity checks from the opt-in live pair, which requires
-external services and may consume credits. The reference pack contains no
-claimed replication result.
+See the [independent replication guide](docs/independent-replication.md) before
+running or publishing pack evidence.
 
-Audit records contain the full SHA-256 digest of context, not raw context or
-task text. The local chain and checkpoint detect ordinary modification,
-deletion, insertion, and reordering. They are not a signed or externally
-anchored attestation against an actor able to rewrite both audit files.
+## Configuration
 
-## Exit codes
+The package reads **no project-specific environment variables**. Child
+processes inherit the current environment unless a library caller supplies an
+explicit environment mapping. CLI flags and versioned files are the public
+configuration surfaces.
 
-| Code | Meaning |
-|---:|---|
-| `0` | Codex completed successfully |
-| `2` | Invalid task or repository |
-| `20` | SigMap executable unavailable |
-| `21` | SigMap index missing or empty |
-| `22` | SigMap timed out |
-| `23` | SigMap retrieval failed |
-| `30` | Codex executable unavailable |
-| `31` | Codex timed out |
-| `32` | Codex JSONL malformed or incomplete |
-| `33` | Codex reported or returned a failure |
-| `40` | Git inspection or change capture failed |
-| `41` | Isolated worktree creation failed |
-| `42` | Scoped worktree cleanup failed |
-| `43` | Audit append failed |
-| `44` | Audit verification failed |
-| `50` | A declared benchmark regression threshold failed |
+| Variable | Default | Purpose |
+|---|---|---|
+| `PATH`, current process environment | Inherited by child processes | Locates Git, Codex, SigMap, Python, test tools, and their external authentication settings. No named credential variable is interpreted by the bridge. |
+| `--repo` | `.` | Target Git repository for `run`, `doctor`, `verify`, and `cleanup`. |
+| `--sandbox` | `workspace-write` | Codex sandbox for one-off, benchmark, and pack runs. Choices: `read-only`, `workspace-write`, `danger-full-access`. |
+| `--worktree-root` | `<repo>/.bridge-worktrees` | Root for bridge-owned `runs/` and `leases/`. |
+| `--audit-log` | `<repo>/.sigmap_bridge_audit.jsonl` | Hash-chained one-off run audit log; the head checkpoint uses the same name plus `.head`. |
+| `SigMapContextProvider.command` | `("sigmap",)` | SigMap executable argument array. `doctor` exposes `--sigmap-command`; benchmark library callers can inject another array. |
+| `SigMapContextProvider.top` | `8` | Number passed to `sigmap ask --top`. |
+| `SigMapContextProvider.timeout_seconds` | `30.0` | Retrieval timeout for one-off runs. Benchmark CLI `--context-timeout` defaults to `120.0`. |
+| `CodexRunner.command` | `("codex",)` | Codex executable argument array. Benchmark and pack commands expose `--codex-command`. |
+| `CodexRunner.timeout_seconds` | `900.0` | One-off Codex timeout. Benchmark attempts use the task's `timeout_seconds`. |
+| Benchmark task `schema_version` | Required; supported value `1` | Selects the strict benchmark-task contract. |
+| Benchmark task `timeout_seconds` | `900.0` | Per setup, Codex, test, and static-check timeout. |
+| Benchmark task `repetitions` | `1` | Number of alternating raw/SigMap pairs. |
+| `benchmark run --output-dir` | `benchmark_runs` | Directory for raw attempt artifacts. |
+| `benchmark run --start-condition` | `raw` | First condition for odd repetitions; order reverses on even repetitions. |
+| `benchmark run --max-workers` | `1` | Concurrent pairs for resumable execution; valid range is 1–32. Conditions within one pair remain sequential. |
+| `--max-pairs`, `--max-runtime-seconds`, `--max-total-tokens` | Unset | Optional resumable execution budgets, evaluated at complete-pair boundaries. Runtime/token limits can overshoot through already-running pairs. |
+| `benchmark pack --workspace` | `.benchmark-pack-workspace` | Clone/worktree workspace for pack preflight and execution. |
+| Artifact, report, pack, execution-state, comparison, and gate schemas | Version `1` | Published compatibility boundary in [`schemas/`](schemas/). |
+
+## Project Structure
+
+```text
+sigmap-codex-bridge/
+├── src/sigmap_codex_bridge/cli.py         # CLI commands, flags, and exit behavior
+├── src/sigmap_codex_bridge/bridge.py      # one-off SigMap → Codex orchestration
+├── src/sigmap_codex_bridge/sigmap.py      # ranked-context retrieval statuses
+├── src/sigmap_codex_bridge/codex.py       # Codex JSONL execution and parsing
+├── src/sigmap_codex_bridge/worktree.py    # contained worktree leases and recovery
+├── src/sigmap_codex_bridge/audit.py       # hash chain and head checkpoint
+├── src/sigmap_codex_bridge/benchmark.py   # strict benchmark task model
+├── src/sigmap_codex_bridge/preflight.py   # source, revision, command, baseline checks
+├── src/sigmap_codex_bridge/experiment.py  # paired attempts and artifacts
+├── src/sigmap_codex_bridge/execution.py   # resume state, concurrency, and budgets
+├── src/sigmap_codex_bridge/scoring.py     # context-independent scoring
+├── src/sigmap_codex_bridge/paired.py      # pair deltas and uncertainty summaries
+├── src/sigmap_codex_bridge/reporting.py   # deterministic JSON/Markdown reports
+├── src/sigmap_codex_bridge/comparison.py  # compatibility-stratified comparison
+├── src/sigmap_codex_bridge/gates.py       # explicit regression policies
+├── src/sigmap_codex_bridge/pack.py        # replication and evidence verification
+├── src/sigmap_codex_bridge/demo_data/     # packaged historical replay data
+├── schemas/               # public JSON Schema contracts, all currently v1
+├── benchmarks/
+│   ├── tasks/             # checked-in Build Week benchmark definitions
+│   ├── gates/             # executable example regression policy
+│   └── results/           # frozen report, methodology, and retained artifacts
+├── benchmark_packs/       # portable public-repository replication definition
+├── docs/                  # methodology, recovery, judge, and submission guides
+├── submission/            # machine-readable Build Week submission metadata
+└── tests/                 # unit, integration, contract, packaging, and smoke tests
+```
+
+## Privacy and data handling
+
+SigMap Codex Bridge is a local CLI, but it launches external CLIs that may use
+network services under their own authentication and data policies.
+
+| Data | Handling |
+|---|---|
+| Task text | Passed to `sigmap ask` and `codex exec` as an argument. Process command arrays can therefore retain it. |
+| Retrieved context | Read from `.context/query-context.md` when SigMap writes a fresh file, otherwise from SigMap stdout; passed to Codex over stdin. The scoring object does not contain context ground truth. |
+| Process output | Codex/SigMap/test/static-check stdout, stderr, commands, durations, paths, and Codex final messages are retained in benchmark artifacts. |
+| Repository changes | Produced in detached worktrees, recorded as paths/diffs-derived metrics, then removed through an exact lease. Source-checkout changes are not copied into the worktree. |
+| One-off audit | Stores a SHA-256 digest of context, not raw context, plus run/revision IDs, usage, exit code, dirty state, and changed-file metadata. It is hash-chained but not signed or externally anchored. |
+| Pack evidence | Sealed with file hashes and provenance. Verification detects ordinary drift; it does not make the evidence confidential. |
+
+Treat artifact directories, execution state, audit logs, and `.context/` as
+sensitive. Review them before sharing. Do not benchmark private code unless the
+Codex and SigMap data policies and your organization permit it.
+
+## Honest Status
+
+| Area | Current status |
+|---|---|
+| Package | `0.9.0`; classified **Pre-Alpha** in `pyproject.toml`. |
+| Test support | CI runs on macOS and Linux with CPython 3.10–3.14. Windows and alternative Python implementations are not claimed. |
+| Packaged demo | Historical, checksum-linked replay of the checked-in 2026-07-18 report. It is not a fresh benchmark and receives no live benchmark credit. |
+| Measured evidence | Raw artifacts and deterministic reports are checked in under [`benchmarks/results/build-week-2026-07-18/`](benchmarks/results/build-week-2026-07-18/). Inspect or regenerate them; do not generalize one small experiment into a model-quality claim. |
+| Independent replication | A hash-locked PyPA `sampleproject` pack is included, but it intentionally contains no live result and PyPA does not endorse this project. |
+| Submission | Repository evidence validates internally. `/feedback`, video, and Devpost values remain external blockers in [`submission/build-week-2026.json`](submission/build-week-2026.json). |
+| Security boundary | Worktree leases, hashes, and atomic checkpoints detect ordinary failures or mutation. They are not sandbox replacements, signatures, distributed locks, or defenses against an actor who can rewrite all local state. |
+
+This project measures; it does not promise that SigMap will improve every task.
+To produce a fresh result, define the task and revision before execution, retain
+every attempt, run `benchmark report`, and interpret complete compatible pairs.
+
+## Roadmap
+
+These are tracked prerequisites and planned release gates, not shipped
+features:
+
+| Item | Tracking / gate |
+|---|---|
+| Retain and verify at least one fresh independent replication result. | Required by the [versioned commit plan](VERSIONED_COMMIT_PLAN.md) before v1.0. |
+| Complete the real `/feedback`, public video, and Devpost metadata. | Required by the [Build Week release checklist](docs/submission/release-checklist.md). |
+| Define a stable provider interface, signed-provenance threat model, aggregate dashboard, and compatibility/migration policy. | Tracked in [issue #22](https://github.com/manojmallick/sigmap-codex-bridge/issues/22); implementation is blocked on the preceding gates. |
+| Tag a stable release only after backward-compatibility and cross-platform checks pass on the merge commit. | Explicit v1.0 release gate; no tag is implied by this README. |
 
 ## License
 
-MIT
+[MIT](LICENSE) © 2026 Manoj Mallick.
