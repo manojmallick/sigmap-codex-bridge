@@ -82,11 +82,8 @@ The high-resolution architecture diagram PNG has been generated and saved to:
 ### Phase 6: 1:50–2:15 — Codex and GPT-5.6 Contribution (One-Off Bridge Run)
 - **CLI Command to Run**:
   ```bash
-  # Fast, low-token live demo (2-3 seconds):
-  ./sigmap-bridge run "Check if pyproject.toml has version 0.9.0" --repo . --json
-
-  # Full task execution:
-  ./sigmap-bridge run "Fix the JWT validation bug and run tests" --repo . --json
+  # Fast live demo (9 seconds, inspects pyproject.toml and cleans worktree):
+  ./sigmap-bridge run "Read pyproject.toml and report its version" --repo . --json
   ```
 - **On Screen**: README "Built with Codex and GPT-5.6" table & bridge result JSON showing execution status and audit hash.
 - **Narration**:
