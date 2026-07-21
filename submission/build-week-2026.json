@@ -9,7 +9,7 @@
   },
   "release": {
     "version": "0.6.0",
-    "status": "blocked",
+    "status": "ready",
     "candidate_tag": "v0.6.0-build-week",
     "deadline": "2026-07-21T17:00:00-07:00",
     "internal_buffer_deadline": "2026-07-21T05:00:00-07:00"
@@ -61,7 +61,7 @@
   },
   "external": {
     "feedback_session_id": "019f75cb-5dfc-7f03-a9c1-94f86dd92c8c",
-    "video_url": null,
+    "video_url": "https://www.youtube.com/watch?v=xedi5yPUlvc",
     "devpost_url": "https://devpost.com/software/sigmap-codex-bridge"
   }
 }

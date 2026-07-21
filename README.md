@@ -25,6 +25,7 @@ cross-platform Python CI matrix.
 - [Quick Start](#quick-start)
 - [Built with Codex and GPT-5.6](#built-with-codex-and-gpt-56)
 - [Configuration](#configuration)
+- [Stable contracts](#stable-contracts)
 - [Project Structure](#project-structure)
 - [Privacy and data handling](#privacy-and-data-handling)
 - [Honest Status](#honest-status)
@@ -248,6 +249,15 @@ sigmap-bridge benchmark pack validate \
 See the [independent replication guide](docs/independent-replication.md) before
 running or publishing pack evidence.
 
+Generate a deterministic dashboard from retained artifact directories:
+
+```bash
+sigmap-bridge benchmark dashboard \
+  benchmarks/results/build-week-2026-07-18/artifacts \
+  --json-output /tmp/dashboard.json \
+  --markdown-output /tmp/dashboard.md --json
+```
+
 ### Measured Build Week result
 
 | Condition | Passed checks |  Median runtime | Median total input |
@@ -269,6 +279,9 @@ predeclared paired benchmark before drawing conclusions about another project.
 | Important decisions              | Raw and SigMap conditions share a pinned revision; missing SigMap context fails closed; correctness comes from tests and observable outputs rather than retrieved context; every attempted run is retained; historical replay is labeled zero-credit rather than presented as a fresh benchmark.                                                                 |
 | Precise GPT-5.6 contribution     | In Codex session `019f75cb-5dfc-7f03-a9c1-94f86dd92c8c`, GPT-5.6 added structured submission-provenance validation. It checks the model label, matching `/feedback` UUID, concrete contribution text, safe verification-command array, and repository-local changed files. It also produced the judge-facing documentation and video plan for that contribution. |
 | Verifiable evidence              | [`submission/build-week-2026.json`](submission/build-week-2026.json) records the session and verification command. [`tests/test_submission.py`](tests/test_submission.py) covers mismatched models and sessions, unsafe command strings, and escaped file paths. The `/feedback` session remains the authoritative record of the interaction.                    |
+
+See [`GPT56_EVIDENCE.md`](GPT56_EVIDENCE.md) for the public session provenance,
+decision trail, commit checkpoints, reproduction commands, and runtime disclosure.
 
 ### Judge path—no live credits and no project rebuild
 
@@ -316,6 +329,14 @@ configuration surfaces.
 | `--max-pairs`, `--max-runtime-seconds`, `--max-total-tokens`          | Unset                               | Optional resumable execution budgets, evaluated at complete-pair boundaries. Runtime/token limits can overshoot through already-running pairs.         |
 | `benchmark pack --workspace`                                          | `.benchmark-pack-workspace`         | Clone/worktree workspace for pack preflight and execution.                                                                                             |
 | Artifact, report, pack, execution-state, comparison, and gate schemas | Version `1`                         | Published compatibility boundary in [`schemas/`](schemas/).                                                                                            |
+| Provenance attestation and evidence dashboard schemas                 | Version `1`                         | Stable signed-envelope and compatibility-stratified dashboard contracts.                                                                               |
+
+## Stable contracts
+
+Version 1.0.0 freezes the documented CLI, exit-code, provider, and v1 schema
+contracts. See the [compatibility and migration policy](docs/stability-and-migration.md),
+[provenance threat model](docs/provenance-attestations.md), and
+[dashboard contract](docs/evidence-dashboard.md).
 
 ### Detailed CLI Options & Subcommands Reference
 
@@ -357,7 +378,13 @@ Checks Build Week submission metadata, session evidence, and external readiness.
 - `--require-ready`: Require external URLs (e.g. video URL) to be non-placeholder and verified ready.
 - `--json`: Output validation results in JSON format.
 
-#### 5. `sigmap-bridge verify`
+#### 5. `sigmap-bridge provenance <sign|verify>`
+
+Creates or verifies versioned HMAC-SHA256 JSON evidence attestations. Keys are read
+from files and never embedded in the output. Verification can pin the expected key ID
+and payload SHA-256.
+
+#### 6. `sigmap-bridge verify`
 
 Verifies audit log SHA-256 hash chains and atomic head checkpoints.
 
@@ -365,7 +392,7 @@ Verifies audit log SHA-256 hash chains and atomic head checkpoints.
 - `--audit-log PATH`: Custom audit log file path.
 - `--json`: Output audit verification status as JSON.
 
-#### 6. `sigmap-bridge cleanup <run_id>`
+#### 7. `sigmap-bridge cleanup <run_id>`
 
 Recovers and cleans an interrupted or orphaned bridge worktree lease.
 
@@ -374,7 +401,7 @@ Recovers and cleans an interrupted or orphaned bridge worktree lease.
 - `--worktree-root PATH`: Managed worktrees root directory.
 - `--json`: Output cleanup result as JSON.
 
-#### 7. `sigmap-bridge benchmark <subcommand>`
+#### 8. `sigmap-bridge benchmark <subcommand>`
 
 - `validate <task_file>`: Validate benchmark task YAML/JSON schema integrity.
 - `preflight <task_file>`: Test setup, pinned revision, command availability, and baseline test success in an isolated worktree.
@@ -395,6 +422,7 @@ Recovers and cleans an interrupted or orphaned bridge worktree lease.
   - `--max-total-tokens N`: Maximum total input/output token budget.
   - `--json`: Output execution summary as JSON.
 - `report <artifact_dir>`: Re-aggregates raw JSON attempt artifacts into `report.json` and `report.md`.
+- `dashboard <artifact_dirs...>`: Writes deterministic JSON/Markdown aggregate views without merging incompatible strata.
 - `compare <baseline_dir> <candidate_dir>`: Stratified pair comparison between two benchmark runs.
 - `gate <artifact_dir> <policy_file>`: Evaluates explicit regression policies.
 - `pack <init|validate|export|preflight|run|seal|verify-evidence>`: Independent replication pack commands.
@@ -420,9 +448,12 @@ sigmap-codex-bridge/
 ├── src/sigmap_codex_bridge/comparison.py  # compatibility-stratified comparison
 ├── src/sigmap_codex_bridge/gates.py       # explicit regression policies
 ├── src/sigmap_codex_bridge/pack.py        # replication and evidence verification
+├── src/sigmap_codex_bridge/attestation.py # signed provenance envelopes
+├── src/sigmap_codex_bridge/dashboard.py   # stratified evidence dashboards
 ├── src/sigmap_codex_bridge/demo_data/     # packaged historical replay data
 ├── schemas/               # public JSON Schema contracts, all currently v1
 ├── benchmarks/
+│   ├── dashboard/         # reproducible aggregate JSON/Markdown view
 │   ├── tasks/             # checked-in Build Week benchmark definitions
 │   ├── gates/             # executable example regression policy
 │   └── results/           # frozen report, methodology, and retained artifacts
@@ -454,13 +485,13 @@ Codex and SigMap data policies and your organization permit it.
 
 | Area                    | Current status                                                                                                                                                                                                                                        |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Package                 | `0.9.0`; classified **Pre-Alpha** in `pyproject.toml`.                                                                                                                                                                                                |
+| Package                 | `1.0.0`; classified **Production/Stable** in `pyproject.toml`.                                                                                                                                                                                        |
 | Test support            | CI runs on macOS and Linux with CPython 3.10–3.14. Windows and alternative Python implementations are not claimed.                                                                                                                                    |
 | Packaged demo           | Historical, checksum-linked replay of the checked-in 2026-07-18 report. It is not a fresh benchmark and receives no live benchmark credit.                                                                                                            |
 | Measured evidence       | Raw artifacts and deterministic reports are checked in under [`benchmarks/results/build-week-2026-07-18/`](benchmarks/results/build-week-2026-07-18/). Inspect or regenerate them; do not generalize one small experiment into a model-quality claim. |
 | Independent replication | A hash-locked PyPA `sampleproject` pack is included, but it intentionally contains no live result and PyPA does not endorse this project.                                                                                                             |
-| Submission              | Repository and structured GPT-5.6 evidence validate internally. The public video remains the external blocker in [`submission/build-week-2026.json`](submission/build-week-2026.json).                                                                |
-| Security boundary       | Worktree leases, hashes, and atomic checkpoints detect ordinary failures or mutation. They are not sandbox replacements, signatures, distributed locks, or defenses against an actor who can rewrite all local state.                                 |
+| Submission              | Repository, structured GPT-5.6 evidence, Devpost URL, and public video are recorded; checked-in metadata passes the readiness validator.                                                                                                               |
+| Security boundary       | Worktree leases, hashes, checkpoints, and optional HMAC attestations detect scoped mutation. They are not sandbox replacements, public-key non-repudiation, distributed locks, or defenses against a compromised key or host.                            |
 
 This project measures; it does not promise that SigMap will improve every task.
 To produce a fresh result, define the task and revision before execution, retain
@@ -468,15 +499,13 @@ every attempt, run `benchmark report`, and interpret complete compatible pairs.
 
 ## Roadmap
 
-These are tracked prerequisites and planned release gates, not shipped
-features:
+These are post-1.0 validation and extension items, not shipped claims:
 
 | Item                                                                                                                         | Tracking / gate                                                                                                                          |
 | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Retain and verify at least one fresh independent replication result.                                                         | Required by the [versioned commit plan](VERSIONED_COMMIT_PLAN.md) before v1.0.                                                           |
-| Complete the real `/feedback`, public video, and Devpost metadata.                                                           | Required by the [Build Week release checklist](docs/submission/release-checklist.md).                                                    |
-| Define a stable provider interface, signed-provenance threat model, aggregate dashboard, and compatibility/migration policy. | Tracked in [issue #22](https://github.com/manojmallick/sigmap-codex-bridge/issues/22); implementation is blocked on the preceding gates. |
-| Tag a stable release only after backward-compatibility and cross-platform checks pass on the merge commit.                   | Explicit v1.0 release gate; no tag is implied by this README.                                                                            |
+| Retain and verify at least one fresh independent replication result.                                       | Deferred validation; 1.0.0 makes no independent-replication claim.                                                        |
+| Add a public-key attestation algorithm with external key discovery.                                        | Future schema; HMAC-SHA256 is the only v1 algorithm.                                                                      |
+| Tag the stable release only after backward-compatibility and cross-platform checks pass on the merge commit. | Explicit release gate; no tag is implied by this README.                                                                  |
 
 ## License
 

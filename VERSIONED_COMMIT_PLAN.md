@@ -329,8 +329,9 @@ multi-repository runs, not optional dashboard polish.
 
 ## v1.0.0 — Post-submission stable release
 
-Start only after v0.7.0–v0.9.0 gates pass with at least one independent
-replication.
+Start only after v0.7.0–v0.9.0 gates pass and submission metadata is ready.
+Independent replication was explicitly deferred on 2026-07-21; v1.0.0 must
+make no independent-replication claim until external verified evidence exists.
 
 Candidate commits:
 

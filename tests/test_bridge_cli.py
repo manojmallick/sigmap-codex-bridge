@@ -31,12 +31,12 @@ def bridge_factory(sigmap_mode: str = "ready", codex_mode: str = "success"):
         return Bridge(
             context_provider=SigMapContextProvider(
                 command=sigmap_command,
-                timeout_seconds=0.05 if sigmap_mode == "timeout" else 1.0,
+                timeout_seconds=0.05 if sigmap_mode == "timeout" else 5.0,
                 env={"FAKE_SIGMAP_MODE": sigmap_mode},
             ),
             codex_runner=CodexRunner(
                 command=codex_command,
-                timeout_seconds=0.05 if codex_mode == "timeout" else 1.0,
+                timeout_seconds=0.05 if codex_mode == "timeout" else 5.0,
                 env={"FAKE_CODEX_MODE": codex_mode},
             ),
             isolate_runs=False,

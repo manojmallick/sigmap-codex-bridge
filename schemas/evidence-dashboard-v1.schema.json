@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/evidence-dashboard-v1.schema.json",
+  "title": "SigMap Codex Bridge evidence dashboard v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dashboard_schema_version",
+    "verified_artifact_inputs",
+    "entry_count",
+    "non_claim",
+    "entries"
+  ],
+  "properties": {
+    "dashboard_schema_version": { "const": 1 },
+    "verified_artifact_inputs": { "const": true },
+    "entry_count": { "type": "integer", "minimum": 1 },
+    "non_claim": { "type": "string", "minLength": 1 },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "source_index",
+          "source_label",
+          "compatibility_key",
+          "compatibility",
+          "report_sha256",
+          "artifact_count",
+          "complete_pair_count",
+          "excluded_incomplete_attempt_count",
+          "failure_count",
+          "report"
+        ]
+      }
+    }
+  }
+}
