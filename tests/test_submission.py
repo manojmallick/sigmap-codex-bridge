@@ -169,7 +169,7 @@ class SubmissionCandidateTests(unittest.TestCase):
         self.assertIn("Independent scorer", architecture)
         self.assertIn("Bridge Audit Log", architecture)
         self.assertIn("2:45 target", demo)
-        self.assertIn("## 2:30–2:45 — Close", demo)
+        self.assertIn("## 2:35–2:45 — Close", demo)
 
 
 if __name__ == "__main__":
