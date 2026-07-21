@@ -280,6 +280,9 @@ predeclared paired benchmark before drawing conclusions about another project.
 | Precise GPT-5.6 contribution     | In Codex session `019f75cb-5dfc-7f03-a9c1-94f86dd92c8c`, GPT-5.6 added structured submission-provenance validation. It checks the model label, matching `/feedback` UUID, concrete contribution text, safe verification-command array, and repository-local changed files. It also produced the judge-facing documentation and video plan for that contribution. |
 | Verifiable evidence              | [`submission/build-week-2026.json`](submission/build-week-2026.json) records the session and verification command. [`tests/test_submission.py`](tests/test_submission.py) covers mismatched models and sessions, unsafe command strings, and escaped file paths. The `/feedback` session remains the authoritative record of the interaction.                    |
 
+See [`GPT56_EVIDENCE.md`](GPT56_EVIDENCE.md) for the public session provenance,
+decision trail, commit checkpoints, reproduction commands, and runtime disclosure.
+
 ### Judge path—no live credits and no project rebuild
 
 From a clean checkout, install the CLI once and replay the packaged evidence:
