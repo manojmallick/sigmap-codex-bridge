@@ -72,6 +72,11 @@ Python version bounds, Git hygiene, Codex auth, and SigMap index status without 
 
 ## 2:00–2:20 — Codex and GPT-5.6 contribution
 
+```bash
+# Fast live run demo (2-3s, minimal tokens):
+./sigmap-bridge run "Check if pyproject.toml has version 0.9.0" --repo . --json
+```
+
 On screen: README “Built with Codex and GPT-5.6” table, then the
 `codex_evidence` result from the submission validator.
 
