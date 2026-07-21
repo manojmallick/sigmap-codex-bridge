@@ -33,15 +33,15 @@ cross-platform Python CI matrix.
 
 ## Why SigMap Codex Bridge
 
-| Evaluation pain | Project response |
-|---|---|
-| A successful patch does not prove that retrieved context helped. | Run explicit `raw` and `sigmap` conditions and compare complete pairs. |
-| Different revisions or dirty working trees invalidate comparisons. | Resolve one commit, reject dirty benchmark sources, and execute in detached leased worktrees. |
-| A retrieval failure can be mistaken for a grounded run. | Fail closed when SigMap was requested but no ready context is available. |
-| Model self-assessment is not an independent correctness signal. | Run declared candidate tests and static checks; score repository changes and process metrics separately from retrieved context. |
-| Interrupted or expensive experiments lose evidence. | Atomically checkpoint execution, reconcile retained artifacts, resume without overwriting completed attempts, and stop at pair boundaries. |
-| Aggregate results can hide failures or incompatible environments. | Retain failed attempts, exclude incomplete pairs from aggregates, and stratify comparisons by task, model, Codex command, platform, and pack provenance. |
-| A benchmark is difficult to reproduce elsewhere. | Validate, export, preflight, run, seal, and verify hash-locked replication packs. |
+| Evaluation pain                                                    | Project response                                                                                                                                         |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A successful patch does not prove that retrieved context helped.   | Run explicit `raw` and `sigmap` conditions and compare complete pairs.                                                                                   |
+| Different revisions or dirty working trees invalidate comparisons. | Resolve one commit, reject dirty benchmark sources, and execute in detached leased worktrees.                                                            |
+| A retrieval failure can be mistaken for a grounded run.            | Fail closed when SigMap was requested but no ready context is available.                                                                                 |
+| Model self-assessment is not an independent correctness signal.    | Run declared candidate tests and static checks; score repository changes and process metrics separately from retrieved context.                          |
+| Interrupted or expensive experiments lose evidence.                | Atomically checkpoint execution, reconcile retained artifacts, resume without overwriting completed attempts, and stop at pair boundaries.               |
+| Aggregate results can hide failures or incompatible environments.  | Retain failed attempts, exclude incomplete pairs from aggregates, and stratify comparisons by task, model, Codex command, platform, and pack provenance. |
+| A benchmark is difficult to reproduce elsewhere.                   | Validate, export, preflight, run, seal, and verify hash-locked replication packs.                                                                        |
 
 ## Architecture
 
@@ -150,11 +150,11 @@ context inside its own worktree after preflight and scheduling.
 
 ### Prerequisites
 
-| Path | Requirements |
-|---|---|
-| Offline replay and report inspection | macOS or Linux; CPython 3.10–3.14; Git |
-| Live one-off run | Offline requirements plus working, authenticated `codex` and indexed `sigmap` CLIs |
-| Live benchmark | Live requirements plus commands declared by the selected task |
+| Path                                 | Requirements                                                                       |
+| ------------------------------------ | ---------------------------------------------------------------------------------- |
+| Offline replay and report inspection | macOS or Linux; CPython 3.10–3.14; Git                                             |
+| Live one-off run                     | Offline requirements plus working, authenticated `codex` and indexed `sigmap` CLIs |
+| Live benchmark                       | Live requirements plus commands declared by the selected task                      |
 
 ### Install and run the zero-credit replay
 
@@ -185,7 +185,7 @@ sigmap-bridge doctor --repo .
 sigmap-bridge doctor --repo . --require-live --json
 ```
 
-![SigMap Codex Bridge Doctor Readiness Diagnostics](docs/assets/doctor-cli.png)
+![SigMap Codex Bridge Doctor Readiness Diagnostics](docs/assets/doctor-cli-v2.png)
 
 `doctor` checks the supported OS/Python range, Git repository, source state,
 Codex executable and authentication, and SigMap executable and index.
@@ -250,10 +250,10 @@ running or publishing pack evidence.
 
 ### Measured Build Week result
 
-| Condition | Passed checks | Median runtime | Median total input |
-|---|---:|---:|---:|
-| Raw | 9/9 | 249.089 seconds | 766,538 tokens |
-| SigMap | 9/9 | 186.590 seconds | 562,358 tokens |
+| Condition | Passed checks |  Median runtime | Median total input |
+| --------- | ------------: | --------------: | -----------------: |
+| Raw       |           9/9 | 249.089 seconds |     766,538 tokens |
+| SigMap    |           9/9 | 186.590 seconds |     562,358 tokens |
 
 These values come from 18 retained historical attempts in the checked-in
 2026-07-18 report. They describe this three-task experiment only. Run
@@ -262,13 +262,13 @@ predeclared paired benchmark before drawing conclusions about another project.
 
 ## Built with Codex and GPT-5.6
 
-| Requirement | What happened in this project |
-|---|---|
-| How Codex was used | Codex helped implement the bridge, strict schemas, isolated Git worktrees, independent scoring, paired analysis, resumable execution, tests, release documentation, and judge workflow. It also ran targeted tests and packaging checks after changes. |
-| Where Codex accelerated the work | Repository context ranking identified the submission validator and its contract tests without a broad source read. Codex then kept the validator, machine-readable metadata, README, Devpost copy, and demo script synchronized in one bounded change. |
-| Important decisions | Raw and SigMap conditions share a pinned revision; missing SigMap context fails closed; correctness comes from tests and observable outputs rather than retrieved context; every attempted run is retained; historical replay is labeled zero-credit rather than presented as a fresh benchmark. |
-| Precise GPT-5.6 contribution | In Codex session `019f75cb-5dfc-7f03-a9c1-94f86dd92c8c`, GPT-5.6 added structured submission-provenance validation. It checks the model label, matching `/feedback` UUID, concrete contribution text, safe verification-command array, and repository-local changed files. It also produced the judge-facing documentation and video plan for that contribution. |
-| Verifiable evidence | [`submission/build-week-2026.json`](submission/build-week-2026.json) records the session and verification command. [`tests/test_submission.py`](tests/test_submission.py) covers mismatched models and sessions, unsafe command strings, and escaped file paths. The `/feedback` session remains the authoritative record of the interaction. |
+| Requirement                      | What happened in this project                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| How Codex was used               | Codex helped implement the bridge, strict schemas, isolated Git worktrees, independent scoring, paired analysis, resumable execution, tests, release documentation, and judge workflow. It also ran targeted tests and packaging checks after changes.                                                                                                           |
+| Where Codex accelerated the work | Repository context ranking identified the submission validator and its contract tests without a broad source read. Codex then kept the validator, machine-readable metadata, README, Devpost copy, and demo script synchronized in one bounded change.                                                                                                           |
+| Important decisions              | Raw and SigMap conditions share a pinned revision; missing SigMap context fails closed; correctness comes from tests and observable outputs rather than retrieved context; every attempted run is retained; historical replay is labeled zero-credit rather than presented as a fresh benchmark.                                                                 |
+| Precise GPT-5.6 contribution     | In Codex session `019f75cb-5dfc-7f03-a9c1-94f86dd92c8c`, GPT-5.6 added structured submission-provenance validation. It checks the model label, matching `/feedback` UUID, concrete contribution text, safe verification-command array, and repository-local changed files. It also produced the judge-facing documentation and video plan for that contribution. |
+| Verifiable evidence              | [`submission/build-week-2026.json`](submission/build-week-2026.json) records the session and verification command. [`tests/test_submission.py`](tests/test_submission.py) covers mismatched models and sessions, unsafe command strings, and escaped file paths. The `/feedback` session remains the authoritative record of the interaction.                    |
 
 ### Judge path—no live credits and no project rebuild
 
@@ -295,38 +295,42 @@ processes inherit the current environment unless a library caller supplies an
 explicit environment mapping. CLI flags and versioned files are the public
 configuration surfaces.
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `PATH`, current process environment | Inherited by child processes | Locates Git, Codex, SigMap, Python, test tools, and their external authentication settings. No named credential variable is interpreted by the bridge. |
-| `--repo` | `.` | Target Git repository for `run`, `doctor`, `verify`, and `cleanup`. |
-| `--sandbox` | `workspace-write` | Codex sandbox for one-off, benchmark, and pack runs. Choices: `read-only`, `workspace-write`, `danger-full-access`. |
-| `--worktree-root` | `<repo>/.bridge-worktrees` | Root for bridge-owned `runs/` and `leases/`. |
-| `--audit-log` | `<repo>/.sigmap_bridge_audit.jsonl` | Hash-chained one-off run audit log; the head checkpoint uses the same name plus `.head`. |
-| `SigMapContextProvider.command` | `("sigmap",)` | SigMap executable argument array. `doctor` exposes `--sigmap-command`; benchmark library callers can inject another array. |
-| `SigMapContextProvider.top` | `8` | Number passed to `sigmap ask --top`. |
-| `SigMapContextProvider.timeout_seconds` | `30.0` | Retrieval timeout for one-off runs. Benchmark CLI `--context-timeout` defaults to `120.0`. |
-| `CodexRunner.command` | `("codex",)` | Codex executable argument array. Benchmark and pack commands expose `--codex-command`. |
-| `CodexRunner.timeout_seconds` | `900.0` | One-off Codex timeout. Benchmark attempts use the task's `timeout_seconds`. |
-| Benchmark task `schema_version` | Required; supported value `1` | Selects the strict benchmark-task contract. |
-| Benchmark task `timeout_seconds` | `900.0` | Per setup, Codex, test, and static-check timeout. |
-| Benchmark task `repetitions` | `1` | Number of alternating raw/SigMap pairs. |
-| `benchmark run --output-dir` | `benchmark_runs` | Directory for raw attempt artifacts. |
-| `benchmark run --start-condition` | `raw` | First condition for odd repetitions; order reverses on even repetitions. |
-| `benchmark run --max-workers` | `1` | Concurrent pairs for resumable execution; valid range is 1–32. Conditions within one pair remain sequential. |
-| `--max-pairs`, `--max-runtime-seconds`, `--max-total-tokens` | Unset | Optional resumable execution budgets, evaluated at complete-pair boundaries. Runtime/token limits can overshoot through already-running pairs. |
-| `benchmark pack --workspace` | `.benchmark-pack-workspace` | Clone/worktree workspace for pack preflight and execution. |
-| Artifact, report, pack, execution-state, comparison, and gate schemas | Version `1` | Published compatibility boundary in [`schemas/`](schemas/). |
+| Variable                                                              | Default                             | Purpose                                                                                                                                                |
+| --------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PATH`, current process environment                                   | Inherited by child processes        | Locates Git, Codex, SigMap, Python, test tools, and their external authentication settings. No named credential variable is interpreted by the bridge. |
+| `--repo`                                                              | `.`                                 | Target Git repository for `run`, `doctor`, `verify`, and `cleanup`.                                                                                    |
+| `--sandbox`                                                           | `workspace-write`                   | Codex sandbox for one-off, benchmark, and pack runs. Choices: `read-only`, `workspace-write`, `danger-full-access`.                                    |
+| `--worktree-root`                                                     | `<repo>/.bridge-worktrees`          | Root for bridge-owned `runs/` and `leases/`.                                                                                                           |
+| `--audit-log`                                                         | `<repo>/.sigmap_bridge_audit.jsonl` | Hash-chained one-off run audit log; the head checkpoint uses the same name plus `.head`.                                                               |
+| `SigMapContextProvider.command`                                       | `("sigmap",)`                       | SigMap executable argument array. `doctor` exposes `--sigmap-command`; benchmark library callers can inject another array.                             |
+| `SigMapContextProvider.top`                                           | `8`                                 | Number passed to `sigmap ask --top`.                                                                                                                   |
+| `SigMapContextProvider.timeout_seconds`                               | `30.0`                              | Retrieval timeout for one-off runs. Benchmark CLI `--context-timeout` defaults to `120.0`.                                                             |
+| `CodexRunner.command`                                                 | `("codex",)`                        | Codex executable argument array. Benchmark and pack commands expose `--codex-command`.                                                                 |
+| `CodexRunner.timeout_seconds`                                         | `900.0`                             | One-off Codex timeout. Benchmark attempts use the task's `timeout_seconds`.                                                                            |
+| Benchmark task `schema_version`                                       | Required; supported value `1`       | Selects the strict benchmark-task contract.                                                                                                            |
+| Benchmark task `timeout_seconds`                                      | `900.0`                             | Per setup, Codex, test, and static-check timeout.                                                                                                      |
+| Benchmark task `repetitions`                                          | `1`                                 | Number of alternating raw/SigMap pairs.                                                                                                                |
+| `benchmark run --output-dir`                                          | `benchmark_runs`                    | Directory for raw attempt artifacts.                                                                                                                   |
+| `benchmark run --start-condition`                                     | `raw`                               | First condition for odd repetitions; order reverses on even repetitions.                                                                               |
+| `benchmark run --max-workers`                                         | `1`                                 | Concurrent pairs for resumable execution; valid range is 1–32. Conditions within one pair remain sequential.                                           |
+| `--max-pairs`, `--max-runtime-seconds`, `--max-total-tokens`          | Unset                               | Optional resumable execution budgets, evaluated at complete-pair boundaries. Runtime/token limits can overshoot through already-running pairs.         |
+| `benchmark pack --workspace`                                          | `.benchmark-pack-workspace`         | Clone/worktree workspace for pack preflight and execution.                                                                                             |
+| Artifact, report, pack, execution-state, comparison, and gate schemas | Version `1`                         | Published compatibility boundary in [`schemas/`](schemas/).                                                                                            |
 
 ### Detailed CLI Options & Subcommands Reference
 
 The `sigmap-bridge` command line interface provides subcommands for zero-credit replay, environment diagnostics, one-off task execution, audit verification, worktree lease cleanup, submission validation, and paired benchmark execution.
 
 #### 1. `sigmap-bridge demo`
+
 Replays packaged historical results without making live model, Git, or network calls.
+
 - `--json`: Emit structured JSON payload instead of human-readable text.
 
 #### 2. `sigmap-bridge doctor`
+
 Diagnoses local readiness for live bridge and benchmark runs.
+
 - `--repo PATH` (default: `.`): Target Git repository root.
 - `--codex-command CMD` (default: `codex`): Path or command name for Codex CLI.
 - `--sigmap-command CMD` (default: `sigmap`): Path or command name for SigMap CLI.
@@ -334,7 +338,9 @@ Diagnoses local readiness for live bridge and benchmark runs.
 - `--json`: Output diagnostic result in JSON format.
 
 #### 3. `sigmap-bridge run <task>`
+
 Executes an isolated one-off task with Codex.
+
 - `task` (positional): Task prompt or instruction passed to Codex.
 - `--repo PATH` (default: `.`): Target Git repository to inspect and branch worktree leases from.
 - `--no-sigmap`: Explicitly disable SigMap context retrieval (runs the raw control condition).
@@ -344,25 +350,32 @@ Executes an isolated one-off task with Codex.
 - `--json`: Output complete execution result as JSON.
 
 #### 4. `sigmap-bridge submission validate [metadata_file]`
+
 Checks Build Week submission metadata, session evidence, and external readiness.
+
 - `metadata_file` (optional, default: `submission/build-week-2026.json`): Path to submission JSON.
 - `--require-ready`: Require external URLs (e.g. video URL) to be non-placeholder and verified ready.
 - `--json`: Output validation results in JSON format.
 
 #### 5. `sigmap-bridge verify`
+
 Verifies audit log SHA-256 hash chains and atomic head checkpoints.
+
 - `--repo PATH` (default: `.`): Repository root.
 - `--audit-log PATH`: Custom audit log file path.
 - `--json`: Output audit verification status as JSON.
 
 #### 6. `sigmap-bridge cleanup <run_id>`
+
 Recovers and cleans an interrupted or orphaned bridge worktree lease.
+
 - `run_id` (positional): Exact lease run ID to remove.
 - `--repo PATH` (default: `.`): Source Git repository path.
 - `--worktree-root PATH`: Managed worktrees root directory.
 - `--json`: Output cleanup result as JSON.
 
 #### 7. `sigmap-bridge benchmark <subcommand>`
+
 - `validate <task_file>`: Validate benchmark task YAML/JSON schema integrity.
 - `preflight <task_file>`: Test setup, pinned revision, command availability, and baseline test success in an isolated worktree.
 - `run <task_files...>`: Run paired raw/SigMap benchmark repetitions.
@@ -424,14 +437,14 @@ sigmap-codex-bridge/
 SigMap Codex Bridge is a local CLI, but it launches external CLIs that may use
 network services under their own authentication and data policies.
 
-| Data | Handling |
-|---|---|
-| Task text | Passed to `sigmap ask` and `codex exec` as an argument. Process command arrays can therefore retain it. |
-| Retrieved context | Read from `.context/query-context.md` when SigMap writes a fresh file, otherwise from SigMap stdout; passed to Codex over stdin. The scoring object does not contain context ground truth. |
-| Process output | Codex/SigMap/test/static-check stdout, stderr, commands, durations, paths, and Codex final messages are retained in benchmark artifacts. |
-| Repository changes | Produced in detached worktrees, recorded as paths/diffs-derived metrics, then removed through an exact lease. Source-checkout changes are not copied into the worktree. |
-| One-off audit | Stores a SHA-256 digest of context, not raw context, plus run/revision IDs, usage, exit code, dirty state, and changed-file metadata. It is hash-chained but not signed or externally anchored. |
-| Pack evidence | Sealed with file hashes and provenance. Verification detects ordinary drift; it does not make the evidence confidential. |
+| Data               | Handling                                                                                                                                                                                        |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Task text          | Passed to `sigmap ask` and `codex exec` as an argument. Process command arrays can therefore retain it.                                                                                         |
+| Retrieved context  | Read from `.context/query-context.md` when SigMap writes a fresh file, otherwise from SigMap stdout; passed to Codex over stdin. The scoring object does not contain context ground truth.      |
+| Process output     | Codex/SigMap/test/static-check stdout, stderr, commands, durations, paths, and Codex final messages are retained in benchmark artifacts.                                                        |
+| Repository changes | Produced in detached worktrees, recorded as paths/diffs-derived metrics, then removed through an exact lease. Source-checkout changes are not copied into the worktree.                         |
+| One-off audit      | Stores a SHA-256 digest of context, not raw context, plus run/revision IDs, usage, exit code, dirty state, and changed-file metadata. It is hash-chained but not signed or externally anchored. |
+| Pack evidence      | Sealed with file hashes and provenance. Verification detects ordinary drift; it does not make the evidence confidential.                                                                        |
 
 Treat artifact directories, execution state, audit logs, and `.context/` as
 sensitive. Review them before sharing. Do not benchmark private code unless the
@@ -439,15 +452,15 @@ Codex and SigMap data policies and your organization permit it.
 
 ## Honest Status
 
-| Area | Current status |
-|---|---|
-| Package | `0.9.0`; classified **Pre-Alpha** in `pyproject.toml`. |
-| Test support | CI runs on macOS and Linux with CPython 3.10–3.14. Windows and alternative Python implementations are not claimed. |
-| Packaged demo | Historical, checksum-linked replay of the checked-in 2026-07-18 report. It is not a fresh benchmark and receives no live benchmark credit. |
-| Measured evidence | Raw artifacts and deterministic reports are checked in under [`benchmarks/results/build-week-2026-07-18/`](benchmarks/results/build-week-2026-07-18/). Inspect or regenerate them; do not generalize one small experiment into a model-quality claim. |
-| Independent replication | A hash-locked PyPA `sampleproject` pack is included, but it intentionally contains no live result and PyPA does not endorse this project. |
-| Submission | Repository and structured GPT-5.6 evidence validate internally. The public video remains the external blocker in [`submission/build-week-2026.json`](submission/build-week-2026.json). |
-| Security boundary | Worktree leases, hashes, and atomic checkpoints detect ordinary failures or mutation. They are not sandbox replacements, signatures, distributed locks, or defenses against an actor who can rewrite all local state. |
+| Area                    | Current status                                                                                                                                                                                                                                        |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Package                 | `0.9.0`; classified **Pre-Alpha** in `pyproject.toml`.                                                                                                                                                                                                |
+| Test support            | CI runs on macOS and Linux with CPython 3.10–3.14. Windows and alternative Python implementations are not claimed.                                                                                                                                    |
+| Packaged demo           | Historical, checksum-linked replay of the checked-in 2026-07-18 report. It is not a fresh benchmark and receives no live benchmark credit.                                                                                                            |
+| Measured evidence       | Raw artifacts and deterministic reports are checked in under [`benchmarks/results/build-week-2026-07-18/`](benchmarks/results/build-week-2026-07-18/). Inspect or regenerate them; do not generalize one small experiment into a model-quality claim. |
+| Independent replication | A hash-locked PyPA `sampleproject` pack is included, but it intentionally contains no live result and PyPA does not endorse this project.                                                                                                             |
+| Submission              | Repository and structured GPT-5.6 evidence validate internally. The public video remains the external blocker in [`submission/build-week-2026.json`](submission/build-week-2026.json).                                                                |
+| Security boundary       | Worktree leases, hashes, and atomic checkpoints detect ordinary failures or mutation. They are not sandbox replacements, signatures, distributed locks, or defenses against an actor who can rewrite all local state.                                 |
 
 This project measures; it does not promise that SigMap will improve every task.
 To produce a fresh result, define the task and revision before execution, retain
@@ -458,12 +471,12 @@ every attempt, run `benchmark report`, and interpret complete compatible pairs.
 These are tracked prerequisites and planned release gates, not shipped
 features:
 
-| Item | Tracking / gate |
-|---|---|
-| Retain and verify at least one fresh independent replication result. | Required by the [versioned commit plan](VERSIONED_COMMIT_PLAN.md) before v1.0. |
-| Complete the real `/feedback`, public video, and Devpost metadata. | Required by the [Build Week release checklist](docs/submission/release-checklist.md). |
+| Item                                                                                                                         | Tracking / gate                                                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Retain and verify at least one fresh independent replication result.                                                         | Required by the [versioned commit plan](VERSIONED_COMMIT_PLAN.md) before v1.0.                                                           |
+| Complete the real `/feedback`, public video, and Devpost metadata.                                                           | Required by the [Build Week release checklist](docs/submission/release-checklist.md).                                                    |
 | Define a stable provider interface, signed-provenance threat model, aggregate dashboard, and compatibility/migration policy. | Tracked in [issue #22](https://github.com/manojmallick/sigmap-codex-bridge/issues/22); implementation is blocked on the preceding gates. |
-| Tag a stable release only after backward-compatibility and cross-platform checks pass on the merge commit. | Explicit v1.0 release gate; no tag is implied by this README. |
+| Tag a stable release only after backward-compatibility and cross-platform checks pass on the merge commit.                   | Explicit v1.0 release gate; no tag is implied by this README.                                                                            |
 
 ## License
 
