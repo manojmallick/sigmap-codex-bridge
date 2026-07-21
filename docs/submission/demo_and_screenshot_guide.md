@@ -63,30 +63,43 @@ The high-resolution architecture diagram PNG has been generated and saved to:
 ### Phase 5: 1:30–1:50 — Environment Readiness Check
 - **CLI Command to Run**:
   ```bash
-  sigmap-bridge doctor --repo .
+  ./sigmap-bridge doctor --repo .
   ```
 - **On Screen**: `doctor` diagnostic output verifying Git, Codex, and SigMap availability.
+- **Narration**:
+  > *"The doctor command verifies local environment readiness before a live run. It checks Python version bounds, Git repository hygiene, Codex authentication, and SigMap index status without running a full benchmark."*
 - **📸 Screenshot #5**: Terminal output of `sigmap-bridge doctor`.
 
 ---
 
-### Phase 6: 1:50–2:15 — One-Off Bridge Run (Live / Demonstration)
+### Phase 6: 1:50–2:15 — Codex and GPT-5.6 Contribution (One-Off Bridge Run)
 - **CLI Command to Run**:
   ```bash
-  sigmap-bridge run "Fix the JWT validation bug and run tests" --repo . --json
+  ./sigmap-bridge run "Fix the JWT validation bug and run tests" --repo . --json
   ```
-- **On Screen**: Bridge result JSON showing requested context, execution status, and audit hash.
+- **On Screen**: README "Built with Codex and GPT-5.6" table & bridge result JSON showing execution status and audit hash.
+- **Narration**:
+  > *"Codex accelerated implementation, testing, and repository navigation across the project. In the cited GPT-5.6 session, it added structured submission provenance: the validator cross-checks the feedback UUID, model label, contribution, safe verification command, and changed files. The contract tests prove those checks fail closed."*
 - **📸 Screenshot #6**: JSON result of `sigmap-bridge run`.
 
 ---
 
-### Phase 7: 2:15–2:45 — Submission Metadata & Verification
+### Phase 7: 2:15–2:30 — Submission Metadata & Verification
 - **CLI Command to Run**:
   ```bash
-  sigmap-bridge submission validate submission/build-week-2026.json
+  ./sigmap-bridge submission validate submission/build-week-2026.json
   ```
 - **On Screen**: `Metadata integrity: VALID` along with `codex_evidence` GPT-5.6 session details.
+- **Narration**:
+  > *"Running submission validate checks machine-readable submission evidence. It verifies the report checksum, Codex feedback session, and flags any missing external URLs like the final video link."*
 - **📸 Screenshot #7**: Terminal output of `submission validate`.
+
+---
+
+### Phase 8: 2:30–2:45 — Close & Summary
+- **On Screen**: README Summary / Closing screen.
+- **Narration**:
+  > *"SigMap Codex Bridge makes the comparison reproducible, the scoring independent, and the evidence inspectable. Codex does not have to guess which files matter—and the repository preserves the cases where that did not help."*
 
 ---
 
