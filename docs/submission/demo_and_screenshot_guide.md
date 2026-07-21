@@ -15,15 +15,23 @@ The high-resolution architecture diagram PNG has been generated and saved to:
 
 ## 🎬 Step-by-Step Demo Script & Narration (Target: 2:45)
 
-### Phase 1: 0:00–0:15 — Result First
-- **On Screen**: [`README.md`](file:///Users/manojmallick/Documents/sigmap-codex-bridge/README.md) Measured Results Table.
+### Phase 0: 0:00–0:15 — The Idea & Problem Hook
+- **On Screen**: [`README.md`](file:///Users/manojmallick/Documents/sigmap-codex-bridge/README.md) Title, Badges & "Why SigMap Codex Bridge" section.
 - **Narration**:
-  > *"Codex passed 9/9 checks in both conditions. With SigMap-ranked context, median runtime was 186.590 instead of 249.089 seconds, and median total input was 562,358 instead of 766,538 tokens. This is a small paired efficiency result, not a general model-quality claim."*
-- **📸 Screenshot #1**: Capture the Measured Build Week Results table from `README.md`.
+  > *"Context retrieval tools are easy to demo but hard to evaluate: model runs drift, favorable runs get over-selected, and missing context can masquerade as success. SigMap Codex Bridge runs Codex in paired raw versus SigMap-ranked conditions from the same commit in isolated worktrees to measure real impact."*
+- **📸 Screenshot #0**: Repository README Header & Problem/Solution Matrix.
 
 ---
 
-### Phase 2: 0:15–0:40 — Zero-Credit Judge Path
+### Phase 1: 0:15–0:30 — Result First (Measured Evidence)
+- **On Screen**: [`README.md`](file:///Users/manojmallick/Documents/sigmap-codex-bridge/README.md) Measured Build Week Results Table.
+- **Narration**:
+  > *"Codex passed 9/9 checks in both conditions. With SigMap-ranked context, median runtime dropped from 249 to 186 seconds—a 25% speedup—and input tokens dropped from 766k to 562k. This is a small paired efficiency result, retained with zero cherry-picking."*
+- **📸 Screenshot #1**: Measured Build Week Results table from `README.md`.
+
+---
+
+### Phase 2: 0:30–0:55 — Zero-Credit Judge Path
 - **CLI Command to Run**:
   ```bash
   # Run directly from repository root:
@@ -32,19 +40,18 @@ The high-resolution architecture diagram PNG has been generated and saved to:
   # Or if installed in virtualenv:
   cd /tmp && sigmap-bridge demo
   ```
-- **On Screen**: Terminal output showing:
-  `ZERO-CREDIT REPLAY — no live Codex, SigMap, Git, or network calls.`
+- **On Screen**: Terminal output showing `ZERO-CREDIT REPLAY — no live Codex, SigMap, Git, or network calls.`
 - **Narration**:
-  > *"The installed wheel verifies the frozen report checksum before replaying 18 historical artifacts. Judges can run this without consuming model credits."*
-- **📸 Screenshot #2**: Terminal output of `sigmap-bridge demo`.
+  > *"The CLI replays all 18 historical attempts with zero model credits or network calls. Judges can instantly verify frozen report checksums and raw artifacts locally."*
+- **📸 Screenshot #2**: Terminal output of `./sigmap-bridge demo`.
 
 ---
 
-### Phase 3: 0:40–1:05 — Isolation & Architecture
+### Phase 3: 0:55–1:20 — Worktree Isolation & Architecture
 - **On Screen**: [`docs/assets/architecture.png`](file:///Users/manojmallick/Documents/sigmap-codex-bridge/docs/assets/architecture.png) (System Architecture diagram).
 - **Narration**:
-  > *"Every condition starts from the same resolved commit in its own detached Git worktree. Missing, empty, failed, or timed-out SigMap context fails closed; it never silently becomes a raw success. Cleanup targets only the bridge-owned, Git-recognized lease."*
-- **📸 Screenshot #3**: Architecture diagram viewed in browser or image viewer.
+  > *"Every condition starts from the same resolved commit in its own detached Git worktree. Missing, empty, or failed SigMap context fails closed—it never silently becomes a raw success. Cleanup targets only the bridge-owned lease."*
+- **📸 Screenshot #3**: Architecture diagram in `docs/assets/architecture.png`.
 
 ---
 
