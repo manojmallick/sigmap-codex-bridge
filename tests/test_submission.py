@@ -42,11 +42,11 @@ class SubmissionCandidateTests(unittest.TestCase):
         path.write_text(json.dumps(payload), encoding="utf-8")
         return path
 
-    def test_checked_in_candidate_is_valid_but_externally_blocked(self) -> None:
+    def test_checked_in_candidate_is_valid_and_externally_ready(self) -> None:
         result = validate_submission(METADATA)
 
         self.assertTrue(result.valid)
-        self.assertFalse(result.submission_ready)
+        self.assertTrue(result.submission_ready)
         self.assertEqual(check(result, "report_sha256").status, "ok")
         self.assertEqual(check(result, "measured_results").status, "ok")
         self.assertEqual(check(result, "experiment_id").status, "ok")
@@ -93,7 +93,7 @@ class SubmissionCandidateTests(unittest.TestCase):
             root = Path(directory)
             path = self.fixture(root)
             payload = json.loads(path.read_text(encoding="utf-8"))
-            for version in ("1.0.0", "next"):
+            for version in ("1.1.0", "next"):
                 payload["release"]["version"] = version
                 path.write_text(json.dumps(payload), encoding="utf-8")
                 with self.subTest(version=version):
@@ -133,7 +133,7 @@ class SubmissionCandidateTests(unittest.TestCase):
             )
 
         self.assertEqual(advisory_exit, 0)
-        self.assertEqual(required_exit, 2)
+        self.assertEqual(required_exit, 0)
 
     def test_judge_documents_match_the_frozen_headline_result(self) -> None:
         documents = (

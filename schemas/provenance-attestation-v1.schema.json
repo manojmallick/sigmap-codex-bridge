@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/sigmap-codex-bridge/schemas/provenance-attestation-v1.schema.json",
+  "title": "SigMap Codex Bridge provenance attestation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "attestation_schema_version",
+    "algorithm",
+    "key_id",
+    "payload_sha256",
+    "payload",
+    "signature"
+  ],
+  "properties": {
+    "attestation_schema_version": { "const": 1 },
+    "algorithm": { "const": "hmac-sha256" },
+    "key_id": { "type": "string", "minLength": 1 },
+    "payload_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "payload": { "type": "object" },
+    "signature": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

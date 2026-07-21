@@ -76,12 +76,12 @@ failure, and `npx sigmap` child-process timeout—is preserved in the
 
 ## Primary feedback session
 
-The primary `/feedback` session ID is not yet available and is not fabricated
-here. `submission/build-week-2026.json` remains `blocked` until the real ID,
-video URL, and Devpost URL are supplied. Run:
+The primary `/feedback` session is
+`019f75cb-5dfc-7f03-a9c1-94f86dd92c8c`. The real public video and Devpost URLs
+are recorded in `submission/build-week-2026.json`. Run:
 
 ```bash
 sigmap-bridge submission validate submission/build-week-2026.json --require-ready
 ```
 
-to enforce that external gate.
+to enforce the complete external-readiness gate.

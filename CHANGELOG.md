@@ -3,6 +3,34 @@
 All notable changes to SigMap Codex Bridge are documented here. Versions before
 v0.6.0 correspond to the staged pull requests linked in the repository.
 
+## [1.0.0] — 2026-07-21
+
+### Added
+
+- Public `ContextProvider` protocol with backward-compatible built-in raw and
+  SigMap providers and fail-closed alternative-provider behavior.
+- Versioned HMAC-SHA256 provenance envelopes, deterministic canonical payloads,
+  key identities, verification constraints, strict schema, CLI commands, and a
+  documented threat model.
+- Reproducible JSON and Markdown evidence dashboards generated from retained
+  artifact directories without merging incompatible strata or hiding negative,
+  failed, or incomplete results.
+- Stable compatibility, deprecation, and migration policy for CLI commands,
+  exit codes, benchmark schemas, replay behavior, and extension contracts.
+
+### Changed
+
+- Package version and maturity classifier advanced to the stable 1.0.0 line.
+- Build Week metadata now records the real public video URL and passes the
+  fail-closed external-readiness gate.
+
+### Evidence boundary
+
+- Historical Build Week evidence remains frozen and is not presented as a new
+  v1.0.0 benchmark run.
+- The replication pack remains available, but no independent external result is
+  claimed by this release.
+
 ## [0.9.0] — 2026-07-18
 
 ### Added

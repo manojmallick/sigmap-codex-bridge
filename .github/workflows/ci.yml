@@ -31,7 +31,9 @@ jobs:
       - name: Run Ruff
         run: ruff check .
       - name: Validate internally consistent submission candidate
-        run: sigmap-bridge submission validate submission/build-week-2026.json --json
+        run: >-
+          sigmap-bridge submission validate
+          submission/build-week-2026.json --require-ready --json
       - name: Validate independent replication pack
         run: >-
           sigmap-bridge benchmark pack validate

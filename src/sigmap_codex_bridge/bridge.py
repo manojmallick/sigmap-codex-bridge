@@ -10,7 +10,7 @@ from uuid import uuid4
 from .audit import AuditError, AuditLog
 from .codex import CodexResult, CodexRunner, CodexStatus
 from .git import FileChange, GitError, GitRepository, GitState
-from .sigmap import ContextResult, ContextStatus, SigMapContextProvider
+from .sigmap import ContextProvider, ContextResult, ContextStatus, SigMapContextProvider
 from .worktree import WorktreeError, WorktreeManager
 
 
@@ -34,6 +34,7 @@ class ExitCode(IntEnum):
 
 
 CONTEXT_EXIT_CODES = {
+    ContextStatus.DISABLED: ExitCode.SIGMAP_FAILED,
     ContextStatus.UNAVAILABLE: ExitCode.SIGMAP_UNAVAILABLE,
     ContextStatus.MISSING_INDEX: ExitCode.SIGMAP_INDEX_MISSING,
     ContextStatus.TIMED_OUT: ExitCode.SIGMAP_TIMEOUT,
@@ -72,7 +73,9 @@ class BridgeResult:
             "repo_path": self.repo_path,
             "requested_context": self.requested_context,
             "context_source": (
-                "sigmap" if self.context.status is ContextStatus.READY else "none"
+                self.requested_context
+                if self.context.status is ContextStatus.READY
+                else "none"
             ),
             "context": self.context.to_dict(),
             "codex": self.codex.to_dict() if self.codex else None,
@@ -94,7 +97,7 @@ class Bridge:
     def __init__(
         self,
         *,
-        context_provider: SigMapContextProvider | None = None,
+        context_provider: ContextProvider | None = None,
         codex_runner: CodexRunner | None = None,
         isolate_runs: bool = True,
         audit_runs: bool = True,
@@ -116,11 +119,12 @@ class Bridge:
     ) -> BridgeResult:
         repo = Path(repo_path).resolve()
         run_id = str(uuid4())
+        requested_context = self.context_provider.name if use_sigmap else "none"
         if not task.strip() or not repo.is_dir():
             return BridgeResult(
                 task=task,
                 repo_path=str(repo),
-                requested_context="sigmap" if use_sigmap else "none",
+                requested_context=requested_context,
                 context=ContextResult(
                     status=ContextStatus.FAILED,
                     detail="Task must be non-empty and repository must be a directory",
@@ -139,7 +143,7 @@ class Bridge:
                 return BridgeResult(
                     task=task,
                     repo_path=str(repo),
-                    requested_context="sigmap" if use_sigmap else "none",
+                    requested_context=requested_context,
                     context=ContextResult.disabled(),
                     codex=None,
                     exit_code=ExitCode.GIT_FAILED,
@@ -152,11 +156,16 @@ class Bridge:
             if use_sigmap
             else ContextResult.disabled()
         )
-        if use_sigmap and context.status is not ContextStatus.READY:
+        raw_provider = requested_context == "raw"
+        if (
+            use_sigmap
+            and context.status is not ContextStatus.READY
+            and not (raw_provider and context.status is ContextStatus.DISABLED)
+        ):
             return BridgeResult(
                 task=task,
                 repo_path=str(repo),
-                requested_context="sigmap",
+                requested_context=requested_context,
                 context=context,
                 codex=None,
                 exit_code=CONTEXT_EXIT_CODES[context.status],
@@ -178,7 +187,7 @@ class Bridge:
                 return BridgeResult(
                     task=task,
                     repo_path=str(repo),
-                    requested_context="sigmap" if use_sigmap else "none",
+                    requested_context=requested_context,
                     context=context,
                     codex=None,
                     exit_code=ExitCode.WORKTREE_FAILED,
@@ -197,7 +206,9 @@ class Bridge:
             codex = self.codex_runner.run(
                 task,
                 execution_path,
-                context=context.context if use_sigmap else None,
+                context=context.context
+                if context.status is ContextStatus.READY
+                else None,
                 sandbox=sandbox,
             )
             exit_code = CODEX_EXIT_CODES[codex.status]
@@ -222,8 +233,14 @@ class Bridge:
                 audit_entry_hash = log.record(
                     run_id=run_id,
                     base_commit=git_state.base_commit,
-                    condition="sigmap" if use_sigmap else "raw",
-                    context=context.context if use_sigmap else "",
+                    condition=(
+                        requested_context if requested_context != "none" else "raw"
+                    ),
+                    context=(
+                        context.context
+                        if context.status is ContextStatus.READY
+                        else ""
+                    ),
                     codex_thread_id=codex.thread_id,
                     exit_code=int(exit_code),
                     usage=asdict(codex.usage),
@@ -237,7 +254,7 @@ class Bridge:
         return BridgeResult(
             task=task,
             repo_path=str(repo),
-            requested_context="sigmap" if use_sigmap else "none",
+            requested_context=requested_context,
             context=context,
             codex=codex,
             exit_code=exit_code,

@@ -20,19 +20,19 @@ commit, and the user explicitly requests release.
 - [x] Challenges diary contains exact observed failures and mitigations.
 - [x] Full tests, Ruff, sdist/wheel build, clean wheel install, and CI pass.
 
-## External gates — currently blocking
+## External gates
 
 - [x] Run `/feedback` in the primary Codex collaboration session and enter the
   returned ID as `external.feedback_session_id`.
-- [ ] Record the demo at no more than 2:50 and show the result in the first 15
+- [x] Record the demo at no more than 2:50 and show the result in the first 15
   seconds.
-- [ ] Watch the recording as a new judge; check legibility and remove secrets.
-- [ ] Upload the video publicly or unlisted and enter its HTTPS URL.
+- [x] Watch the recording as a new judge; check legibility and remove secrets.
+- [x] Upload the video publicly or unlisted and enter its HTTPS URL.
 - [x] Populate the Devpost project and enter its public project URL.
 - [ ] Finalize the submission form in the Developer Tools category.
-- [ ] Run `sigmap-bridge submission validate submission/build-week-2026.json
+- [x] Run `sigmap-bridge submission validate submission/build-week-2026.json
   --require-ready` and require exit code 0.
-- [ ] Confirm README, video, Devpost copy, and report still show identical
+- [x] Confirm README, video, Devpost copy, and report still show identical
   commands and numbers.
 - [ ] Submit no later than the internal buffer deadline:
   2026-07-21 05:00 PDT, twelve hours before the official deadline.

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Mapping, Protocol, Sequence, runtime_checkable
 
 from .process import ProcessResult, run_process
 
@@ -44,8 +44,30 @@ class ContextResult:
         }
 
 
+@runtime_checkable
+class ContextProvider(Protocol):
+    """Public extension contract for ranked repository-context providers."""
+
+    name: str
+
+    def retrieve(self, task: str, repo_path: str | Path) -> ContextResult:
+        """Return ready context or an explicit fail-closed status."""
+
+
+class RawContextProvider:
+    """Built-in provider for the explicit no-context control condition."""
+
+    name = "raw"
+
+    def retrieve(self, task: str, repo_path: str | Path) -> ContextResult:
+        del task, repo_path
+        return ContextResult.disabled()
+
+
 class SigMapContextProvider:
     """Retrieve ranked context using the SigMap CLI."""
+
+    name = "sigmap"
 
     def __init__(
         self,

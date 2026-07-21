@@ -9,9 +9,18 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from .audit import AuditLog
+from .attestation import (
+    AttestationError,
+    read_json_object,
+    read_key,
+    sign_attestation,
+    verify_attestation,
+    write_json,
+)
 from .benchmark import BenchmarkValidationError, load_benchmark_task
 from .bridge import Bridge, BridgeResult, ExitCode
 from .comparison import ComparisonError, compare_directories, write_comparison
+from .dashboard import write_dashboard
 from .demo import DemoError, render_replay, replay_demo
 from .doctor import render_doctor, run_doctor
 from .execution import (
@@ -83,6 +92,29 @@ def build_parser() -> argparse.ArgumentParser:
     )
     submission_validate.add_argument("--require-ready", action="store_true")
     submission_validate.add_argument("--json", action="store_true")
+
+    provenance_parser = subparsers.add_parser(
+        "provenance", help="Sign and verify versioned evidence attestations"
+    )
+    provenance_subparsers = provenance_parser.add_subparsers(
+        dest="provenance_command", required=True
+    )
+    provenance_sign = provenance_subparsers.add_parser(
+        "sign", help="Sign a JSON evidence object with HMAC-SHA256"
+    )
+    provenance_sign.add_argument("input")
+    provenance_sign.add_argument("output")
+    provenance_sign.add_argument("--key-file", required=True)
+    provenance_sign.add_argument("--key-id", required=True)
+    provenance_sign.add_argument("--json", action="store_true")
+    provenance_verify = provenance_subparsers.add_parser(
+        "verify", help="Verify an evidence attestation"
+    )
+    provenance_verify.add_argument("attestation")
+    provenance_verify.add_argument("--key-file", required=True)
+    provenance_verify.add_argument("--expected-key-id")
+    provenance_verify.add_argument("--expected-payload-sha256")
+    provenance_verify.add_argument("--json", action="store_true")
 
     run_parser = subparsers.add_parser("run", help="Run one bridge task")
     run_parser.add_argument("task", help="Task instruction passed to Codex")
@@ -248,6 +280,13 @@ def build_parser() -> argparse.ArgumentParser:
     report_parser.add_argument("--json-output")
     report_parser.add_argument("--markdown-output")
     report_parser.add_argument("--json", action="store_true")
+    dashboard_parser = benchmark_subparsers.add_parser(
+        "dashboard", help="Aggregate validated evidence without merging strata"
+    )
+    dashboard_parser.add_argument("artifact_dirs", nargs="+")
+    dashboard_parser.add_argument("--json-output", required=True)
+    dashboard_parser.add_argument("--markdown-output", required=True)
+    dashboard_parser.add_argument("--json", action="store_true")
     compare_parser = benchmark_subparsers.add_parser(
         "compare", help="Compare compatible paired experiments"
     )
@@ -372,6 +411,38 @@ def main(
             return int(ExitCode.INVALID_INPUT)
         return int(ExitCode.SUCCESS)
 
+    if args.command == "provenance":
+        try:
+            if args.provenance_command == "sign":
+                envelope = sign_attestation(
+                    read_json_object(args.input),
+                    key=read_key(args.key_file),
+                    key_id=args.key_id,
+                )
+                write_json(args.output, envelope)
+                payload = {
+                    "valid": True,
+                    "attestation": str(Path(args.output).resolve()),
+                    "algorithm": envelope["algorithm"],
+                    "key_id": envelope["key_id"],
+                    "payload_sha256": envelope["payload_sha256"],
+                }
+            else:
+                payload = verify_attestation(
+                    read_json_object(args.attestation),
+                    key=read_key(args.key_file),
+                    expected_key_id=args.expected_key_id,
+                    expected_payload_sha256=args.expected_payload_sha256,
+                )
+        except AttestationError as error:
+            payload = {"valid": False, "error": str(error)}
+        _print_payload(payload, as_json=args.json)
+        return (
+            int(ExitCode.SUCCESS)
+            if payload.get("valid")
+            else int(ExitCode.INVALID_INPUT)
+        )
+
     if args.command == "benchmark":
         if args.benchmark_command == "pack":
             try:
@@ -475,6 +546,28 @@ def main(
                     "artifact_count": report["artifact_count"],
                     "json_report": str(json_path),
                     "markdown_report": str(markdown_path),
+                }
+                exit_code = int(ExitCode.SUCCESS)
+            except ReportError as error:
+                payload = {"valid": False, "error": str(error)}
+                exit_code = int(ExitCode.INVALID_INPUT)
+            _print_payload(payload, as_json=args.json)
+            return exit_code
+
+        if args.benchmark_command == "dashboard":
+            try:
+                dashboard = write_dashboard(
+                    args.artifact_dirs,
+                    json_path=args.json_output,
+                    markdown_path=args.markdown_output,
+                )
+                payload = {
+                    "valid": True,
+                    "entry_count": dashboard["entry_count"],
+                    "json_dashboard": str(Path(args.json_output).resolve()),
+                    "markdown_dashboard": str(
+                        Path(args.markdown_output).resolve()
+                    ),
                 }
                 exit_code = int(ExitCode.SUCCESS)
             except ReportError as error:
