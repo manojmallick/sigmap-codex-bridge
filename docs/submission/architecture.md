@@ -1,5 +1,7 @@
 # Architecture and benchmark diagrams
 
+![SigMap Codex Bridge Architecture Diagram](../assets/architecture.png)
+
 ## One bridge run
 
 ```mermaid

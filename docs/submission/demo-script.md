@@ -18,8 +18,11 @@ Narration:
 ## 0:15–0:40 — Zero-credit judge path
 
 ```bash
-cd /tmp
-sigmap-bridge demo
+# Run directly from the repository checkout:
+./sigmap-bridge demo
+
+# Or from outside after installing into venv (pip install -e .):
+cd /tmp && sigmap-bridge demo
 ```
 
 Hold the first line on screen: “ZERO-CREDIT REPLAY — no live Codex, SigMap,
@@ -40,7 +43,7 @@ Narration:
 ## 1:05–1:30 — Independent correctness
 
 ```bash
-sigmap-bridge benchmark validate benchmarks/tasks/artifact-run-status.yaml --json
+./sigmap-bridge benchmark validate benchmarks/tasks/artifact-run-status.yaml --json
 ```
 
 Show the argument-array test command and expected files. Explain that retrieved
@@ -70,7 +73,7 @@ Narration:
 ## 2:15–2:30 — Submission integrity
 
 ```bash
-sigmap-bridge submission validate submission/build-week-2026.json
+./sigmap-bridge submission validate submission/build-week-2026.json
 ```
 
 Show `Metadata integrity: VALID`, the `codex_evidence: GPT-5.6 session ...`

@@ -45,6 +45,8 @@ cross-platform Python CI matrix.
 
 ## Architecture
 
+![SigMap Codex Bridge Architecture Diagram](docs/assets/architecture.png)
+
 ```mermaid
 flowchart TD
     subgraph Inputs["📥 Inputs"]
@@ -160,16 +162,21 @@ context inside its own worktree after preflight and scheduling.
 git clone https://github.com/manojmallick/sigmap-codex-bridge.git
 cd sigmap-codex-bridge
 
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install .
+# Option 1: Direct repo execution (no virtualenv or pip install needed):
+./sigmap-bridge demo
+./sigmap-bridge demo --json
 
+# Option 2: Virtualenv setup:
+python3 -m venv .venv
+source .venv/bin/activate
+pip install .
 sigmap-bridge demo
-sigmap-bridge demo --json
 ```
 
 `demo` verifies and replays the report packaged in the wheel. It makes no live
 Codex, SigMap, Git, or network calls and requires no model credits.
+
+![SigMap Codex Bridge Zero-Credit Demo Replay](docs/assets/demo-replay-cli.png)
 
 ### Check live readiness
 
@@ -177,6 +184,8 @@ Codex, SigMap, Git, or network calls and requires no model credits.
 sigmap-bridge doctor --repo .
 sigmap-bridge doctor --repo . --require-live --json
 ```
+
+![SigMap Codex Bridge Doctor Readiness Diagnostics](docs/assets/doctor-cli.png)
 
 `doctor` checks the supported OS/Python range, Git repository, source state,
 Codex executable and authentication, and SigMap executable and index.
@@ -209,6 +218,8 @@ sigmap-bridge benchmark report \
   --markdown-output /tmp/sigmap-report.md \
   --json
 ```
+
+![SigMap Codex Bridge Benchmark Task Validation](docs/assets/benchmark-validate-cli.png)
 
 The checked-in task files reproduce the historical experiment environment and
 may reference tools or interpreter paths not present on another machine. Use
@@ -271,6 +282,8 @@ sigmap-bridge demo
 sigmap-bridge submission validate submission/build-week-2026.json
 ```
 
+![SigMap Codex Bridge Submission Validation](docs/assets/submission-validate-cli.png)
+
 The demo makes no Codex, SigMap, Git, or network calls. It verifies the packaged
 report checksum and replays the retained historical result. A live benchmark is
 optional and is never required for judging this submission.
@@ -303,6 +316,76 @@ configuration surfaces.
 | `--max-pairs`, `--max-runtime-seconds`, `--max-total-tokens` | Unset | Optional resumable execution budgets, evaluated at complete-pair boundaries. Runtime/token limits can overshoot through already-running pairs. |
 | `benchmark pack --workspace` | `.benchmark-pack-workspace` | Clone/worktree workspace for pack preflight and execution. |
 | Artifact, report, pack, execution-state, comparison, and gate schemas | Version `1` | Published compatibility boundary in [`schemas/`](schemas/). |
+
+### Detailed CLI Options & Subcommands Reference
+
+The `sigmap-bridge` command line interface provides subcommands for zero-credit replay, environment diagnostics, one-off task execution, audit verification, worktree lease cleanup, submission validation, and paired benchmark execution.
+
+#### 1. `sigmap-bridge demo`
+Replays packaged historical results without making live model, Git, or network calls.
+- `--json`: Emit structured JSON payload instead of human-readable text.
+
+#### 2. `sigmap-bridge doctor`
+Diagnoses local readiness for live bridge and benchmark runs.
+- `--repo PATH` (default: `.`): Target Git repository root.
+- `--codex-command CMD` (default: `codex`): Path or command name for Codex CLI.
+- `--sigmap-command CMD` (default: `sigmap`): Path or command name for SigMap CLI.
+- `--require-live`: Exit with non-zero code if live-run prerequisites (Codex auth, SigMap index) are missing.
+- `--json`: Output diagnostic result in JSON format.
+
+#### 3. `sigmap-bridge run <task>`
+Executes an isolated one-off task with Codex.
+- `task` (positional): Task prompt or instruction passed to Codex.
+- `--repo PATH` (default: `.`): Target Git repository to inspect and branch worktree leases from.
+- `--no-sigmap`: Explicitly disable SigMap context retrieval (runs the raw control condition).
+- `--sandbox {read-only,workspace-write,danger-full-access}` (default: `workspace-write`): Codex execution sandbox policy.
+- `--worktree-root PATH` (default: `<repo>/.bridge-worktrees`): Root directory for temporary detached Git worktrees.
+- `--audit-log PATH` (default: `<repo>/.sigmap_bridge_audit.jsonl`): Custom path for the SHA-256 audit log.
+- `--json`: Output complete execution result as JSON.
+
+#### 4. `sigmap-bridge submission validate [metadata_file]`
+Checks Build Week submission metadata, session evidence, and external readiness.
+- `metadata_file` (optional, default: `submission/build-week-2026.json`): Path to submission JSON.
+- `--require-ready`: Require external URLs (e.g. video URL) to be non-placeholder and verified ready.
+- `--json`: Output validation results in JSON format.
+
+#### 5. `sigmap-bridge verify`
+Verifies audit log SHA-256 hash chains and atomic head checkpoints.
+- `--repo PATH` (default: `.`): Repository root.
+- `--audit-log PATH`: Custom audit log file path.
+- `--json`: Output audit verification status as JSON.
+
+#### 6. `sigmap-bridge cleanup <run_id>`
+Recovers and cleans an interrupted or orphaned bridge worktree lease.
+- `run_id` (positional): Exact lease run ID to remove.
+- `--repo PATH` (default: `.`): Source Git repository path.
+- `--worktree-root PATH`: Managed worktrees root directory.
+- `--json`: Output cleanup result as JSON.
+
+#### 7. `sigmap-bridge benchmark <subcommand>`
+- `validate <task_file>`: Validate benchmark task YAML/JSON schema integrity.
+- `preflight <task_file>`: Test setup, pinned revision, command availability, and baseline test success in an isolated worktree.
+- `run <task_files...>`: Run paired raw/SigMap benchmark repetitions.
+  - `--experiment-id ID` (**required**): Unique experiment identifier.
+  - `--output-dir PATH` (default: `benchmark_runs`): Output directory for attempt artifacts.
+  - `--start-condition {raw,sigmap}` (default: `raw`): Initial condition for odd repetitions.
+  - `--sandbox {read-only,workspace-write,danger-full-access}` (default: `workspace-write`): Codex sandbox level.
+  - `--model MODEL`: Target model label (e.g., `gpt-5.6`).
+  - `--codex-command CMD`: Path/command for Codex CLI.
+  - `--context-timeout SECONDS` (default: `120.0`): Timeout for context retrieval in seconds.
+  - `--worktree-root PATH`: Override worktree storage path.
+  - `--state-file PATH`: Path to state file enabling atomic resumable execution.
+  - `--resume`: Resume execution from an existing `--state-file`.
+  - `--max-workers N` (default: `1`): Number of concurrent worker threads (1–32).
+  - `--max-pairs N`: Maximum number of completed pairs allowed before stopping.
+  - `--max-runtime-seconds N`: Maximum total runtime budget in seconds.
+  - `--max-total-tokens N`: Maximum total input/output token budget.
+  - `--json`: Output execution summary as JSON.
+- `report <artifact_dir>`: Re-aggregates raw JSON attempt artifacts into `report.json` and `report.md`.
+- `compare <baseline_dir> <candidate_dir>`: Stratified pair comparison between two benchmark runs.
+- `gate <artifact_dir> <policy_file>`: Evaluates explicit regression policies.
+- `pack <init|validate|export|preflight|run|seal|verify-evidence>`: Independent replication pack commands.
+- `execution <diagnose|recover>`: Inspect or recover state file worktree leases.
 
 ## Project Structure
 

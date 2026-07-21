@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Convenience repo wrapper for sigmap-bridge CLI."""
+
+import os
+import sys
+from pathlib import Path
+
+# If running on Python < 3.10, attempt to re-exec with Python 3.10+ if available
+if sys.version_info < (3, 10):
+    import shutil
+    for candidate in ("python3.14", "python3.13", "python3.12", "python3.11", "python3.10", "/opt/homebrew/bin/python3"):
+        executable = shutil.which(candidate) or (candidate if os.path.exists(candidate) else None)
+        if executable:
+            os.execv(executable, [executable] + sys.argv)
+
+# Add src to python path for repository execution
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+
+from sigmap_codex_bridge.cli import main
+
+if __name__ == "__main__":
+    sys.exit(main())

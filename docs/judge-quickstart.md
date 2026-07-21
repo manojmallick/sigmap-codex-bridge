@@ -4,25 +4,30 @@ The fastest path is a **zero-credit replay** of the measured v0.4 benchmark
 report packaged in the wheel. It does not run Codex or SigMap, touch Git, make
 network requests, or claim to produce fresh benchmark evidence.
 
-## 1. Install from a clean checkout
+## 1. Quick execution options
 
-Supported: macOS and Linux with CPython 3.10 through 3.14.
+### Option A: Zero-install directly from repository checkout
 
 ```bash
 git clone https://github.com/manojmallick/sigmap-codex-bridge.git
 cd sigmap-codex-bridge
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install .
+
+# Run directly without installing into Python site-packages:
+./sigmap-bridge demo
+./sigmap-bridge demo --json
 ```
 
-## 2. Replay the packaged evidence
-
-Run from outside the checkout to prove that package resources, rather than
-working-tree files, supply the demo:
+### Option B: Virtual environment installation
 
 ```bash
-cd /tmp
+git clone https://github.com/manojmallick/sigmap-codex-bridge.git
+cd sigmap-codex-bridge
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install .
+
+# Replay from anywhere once activated:
 sigmap-bridge demo
 sigmap-bridge demo --json > sigmap-bridge-replay.json
 ```
